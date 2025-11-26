@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar do Pedrão - Início</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="index.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <nav>
+            <ul>
+                <li id="btn-sair" style="display: none;"><a href="#" onclick="fazerLogout()">Sair</a></li>
+                <li id="btn-login"><a href="login-cadastro/login.html">Login</a></li>
+                
+                <li id="btn-qrcode" style="display: none;">
+                    <a href="perfis_de_usuario/admin/qrcode_mesas.html">Gerar QR Codes</a>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="box">
+        <h1 class="texto">Bem-vindo ao Sistema Bar</h1>
+
+        <div id="painel-publico">
+            <p class="texto">Por favor, faça login para acessar o sistema.</p>
+        </div>
+
+        <div id="painel-admin" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+            <h3 class="texto">Área Administrativa</h3>
+            <p class="texto-info">Gerencie mesas, cardápio e relatórios.</p>
+            <a href="perfis_de_usuario/admin/admin.html">
+                <button>Acessar Painel Admin</button>
+            </a>
+        </div>
+
+        <div id="painel-garcom" style="display: none; flex-direction: column; align-items: center; gap: 10px;">
+            <h3 class="texto">Área do Garçom</h3>
+            <p class="texto-info">Abra mesas e lance pedidos.</p>
+            <a href="perfis_de_usuario/garcom/garcom.html">
+                <button>Acessar Painel Garçom</button>
+            </a>
+        </div>
+
+    </main>
+
+    <footer>
+        <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v1.0</p>
+    </footer>
+
+</body>
+</html>

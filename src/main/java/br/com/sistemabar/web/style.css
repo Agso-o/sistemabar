@@ -1,0 +1,126 @@
+body {
+    background-color: rgba(0, 0, 0, 0.753);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.texto {
+    color: aliceblue;
+    margin-top: 40px 0 40px 0;
+}
+
+.box, form{
+    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+input {
+    width: 250px;
+    height: 25px;
+    border-radius: 10px;
+    padding: 0 10px 0 10px;
+}
+
+button {
+    width: 150px;
+    height: 25px;
+}
+
+ /* escondeirijo para confirmação */
+.painel-acao, .sub-painel {
+    display: none;
+    width: 100%;
+}
+
+/* header */
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 0;
+}
+
+.header nav {
+    text-align: center;
+}
+
+.header ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.header li {
+    display: inline;
+    margin-right: 20px;
+}
+
+.header a {
+    text-decoration: none;
+    color: #fff;
+}
+
+/* sistema qr code */
+
+/* --- MODAL DO QR CODE --- */
+.modal-overlay {
+    display: none; /* Começa escondido */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #333;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    border: 2px solid #fff;
+}
+
+.qr-container {
+    background: white; /* QR Code precisa de fundo branco para ler bem */
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.lista-mesas {
+    width: 100%;
+    max-width: 600px;
+    margin-top: 20px;
+    border-collapse: collapse;
+    color: aliceblue;
+}
+
+.lista-mesas td, .lista-mesas th {
+    border: 1px solid #555;
+    padding: 10px;
+    text-align: center;
+}
+
+.btn-qr {
+    background-color: #008cff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
