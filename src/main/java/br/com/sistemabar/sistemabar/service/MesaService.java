@@ -197,4 +197,31 @@ public class MesaService {
         return pagamentoRepository.save(novoPagamento);
     }
 
+    @Transactional
+    public Comanda fecharComanda(Long comandaId) {
+        Comanda comanda = comandaRepository.findById(comandaId)
+                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
+
+        if (comanda.getStatus() == StatusComanda.FECHADA) {
+            throw new RuntimeException("Esta comanda já foi fechada.");
+        }
+
+        double totalRestante = calcularTotalRestanteComanda(comandaId);
+        
+        // Verifica se a conta está paga (com margem de erro para double)
+        if (totalRestante > 0.01) {
+            throw new RuntimeException("A conta não pode ser fechada. Saldo devedor: R$ " + totalRestante);
+        }
+
+        comanda.setStatus(StatusComanda.FECHADA);
+        // comanda.setDataFechamento(LocalDateTime.now()); // Se tiver esse campo
+        comandaRepository.save(comanda);
+
+        Mesa mesa = comanda.getMesa();
+        mesa.setStatus(StatusMesa.LIVRE);
+        mesaRepository.save(mesa);
+
+        return comanda;
+    }
+
 }

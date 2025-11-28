@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garçom</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/auth-guard.js"></script>
+    <script src="/js/painel-switcher.js" defer></script>
+    <script src="/js/garcom.js" defer></script>
+</head>
+<body>
+<div class="box">
+    <h1 class="texto">PAINEL DO GARÇOM</h1>
+
+    <select name="Ação" id="acao_garcom">
+        <option value="0">Selecione uma ação...</option>
+        <option value="1">Abrir mesa</option>
+        <option value="2">Adicionar pessoa à mesa</option>
+        <option value="3">Adicionar itens na mesa</option>
+        <option value="4">Remover ou cancelar itens</option>
+        <option value="5">Habilitar/dispensar couvert</option>
+        <option value="6">Fechar conta da mesa</option>
+        <option value="7">Registrar pagamento</option>
+    </select>
+
+    <div id="paineis-container">
+        <div id="painel-1" class="painel-acao">
+            <form class="box" onsubmit="abrirMesa(event)">
+                <h3 class="texto">Abrir Mesa</h3>
+                <input type="number" id="abrir-mesa-numero" placeholder="Número da Mesa">
+                <input type="number" id="add-pessoa-qtd" placeholder="Qtd. de Pessoas (ex: 2)">
+                <button type="submit">Confirmar Abertura</button>
+            </form>
+        </div>
+
+        <div id="painel-2" class="painel-acao">
+            <form class="box" onsubmit="adicionarPessoa(event)">
+                <h3 class="texto">Adicionar Pessoa (Futuro)</h3>
+                <p class="texto-info">Funcionalidade a implementar no back-end.</p>
+            </form>
+        </div>
+
+        <div id="painel-3" class="painel-acao">
+            <form class="box" onsubmit="adicionarItem(event)">
+                <h3 class="texto">Adicionar Itens</h3>
+                <input type="number" id="add-item-mesa" placeholder="Número da Mesa"> <input type="number" id="add-item-codigo" placeholder="ID do Item">
+                <input type="number" id="add-item-qtd" placeholder="Quantidade">
+                <button type="submit">Adicionar Item</button>
+            </form>
+        </div>
+
+        <div id="painel-4" class="painel-acao">
+            <form class="box" onsubmit="removerItem(event)">
+                <h3 class="texto">Cancelar Item</h3>
+                <input type="number" id="remover-item-id" placeholder="ID do Pedido">
+                <input type="text" id="remover-item-motivo" placeholder="Motivo do cancelamento">
+                <button type="submit">Cancelar Item</button>
+            </form>
+        </div>
+
+        <div id="painel-5" class="painel-acao">
+            <form class="box" onsubmit="alternarCouvert(event)">
+                <h3 class="texto">Habilitar/Dispensar Couvert</h3>
+                <p class="texto-info">Funcionalidade a implementar no back-end.</p>
+            </form>
+        </div>
+
+        <div id="painel-6" class="painel-acao">
+            <form class="box" onsubmit="fecharConta(event)">
+                <h3 class="texto">Fechar Conta</h3>
+                <input type="number" id="fechar-mesa-numero" placeholder="ID da Comanda">
+                <button type="submit">Fechar Conta</button>
+            </form>
+        </div>
+
+        <div id="painel-7" class="painel-acao">
+            <form class="box" onsubmit="registrarPgto(event)">
+                <h3 class="texto">Registrar Pagamento</h3>
+                <input type="number" id="pgto-mesa-numero" placeholder="ID da Comanda">
+                <input type="number" id="pgto-valor" placeholder="Valor pago (R$)">
+                <button type="submit">Registrar Pagamento</button>
+            </form>
+        </div>
+    </div>
+</div>
+<footer>
+    <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v1.0</p>
+</footer>
+</body>
+</html>
