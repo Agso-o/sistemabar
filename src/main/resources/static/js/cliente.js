@@ -1,40 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Pega o parametro ?mesa=1 da URL
     const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa');
 
-    if (mesaId) {
-        document.getElementById('numero-mesa').innerText = mesaId;
-        carregarConsumo(mesaId);
+    // ATENÇÃO: Seu QR Code envia ?mesa=ID_DA_COMANDA.
+    // O ClienteController espera o ID da Comanda.
+    const comandaId = params.get('mesa');
+
+    if (comandaId) {
+        carregarConsumo(comandaId);
     } else {
         document.getElementById('numero-mesa').innerText = "(Inválida)";
-        alert("Nenhuma mesa selecionada.");
+        alert("Nenhuma comanda selecionada.");
     }
 });
 
-async function carregarConsumo(mesaId) {
-    const urlApi = `http://localhost:8080/api/mesas/${mesaId}/extrato`;
+async function carregarConsumo(comandaId) {
+    // URL que criamos no ClienteController.java
+    const urlApi = `http://localhost:8080/api/cliente/extrato/${comandaId}`;
 
     try {
-        const data = {
-            itensConsumidos: [
-                { nome: "Cerveja", qtd: 2, valorTotal: 20.00 },
-                { nome: "Porção de Fritas", qtd: 1, valorTotal: 30.00 },
-                { nome: "Refrigerante", qtd: 1, valorTotal: 8.00 }
-            ],
-            subtotalComida: 30.00,
-            subtotalBebida: 28.00,
-            couvert: 10.00,
-            gorjeta: 7.30,
-            totalPago: 25.00,
-            status: "OCUPADA"
-        };
+        const response = await fetch(urlApi);
 
-        const totalBruto = data.subtotalComida + data.subtotalBebida + data.couvert + data.gorjeta;
-        const saldoDevedor = totalBruto - data.totalPago;
+        if (!response.ok) {
+            throw new Error('Erro ao buscar comanda. Talvez ela não exista ou já esteja fechada.');
+        }
 
+        const data = await response.json(); // Pega o ExtratoDTO do Java
+
+        // Preenche o número da mesa no título
+        document.getElementById('numero-mesa').innerText = data.numeroMesa;
+
+        // Preenche a tabela de itens
         const tbody = document.getElementById('lista-itens');
-        tbody.innerHTML = ""; 
-        
+        tbody.innerHTML = "";
+
         data.itensConsumidos.forEach(item => {
             const row = `
                 <tr>
@@ -46,18 +45,19 @@ async function carregarConsumo(mesaId) {
             tbody.innerHTML += row;
         });
 
+        // Preenche os valores do sumário
         document.getElementById('subtotal-comida').innerText = `R$ ${data.subtotalComida.toFixed(2)}`;
         document.getElementById('subtotal-bebida').innerText = `R$ ${data.subtotalBebida.toFixed(2)}`;
         document.getElementById('valor-couvert').innerText = `R$ ${data.couvert.toFixed(2)}`;
         document.getElementById('valor-gorjeta').innerText = `R$ ${data.gorjeta.toFixed(2)}`;
-        
         document.getElementById('valor-pago').innerText = `R$ ${data.totalPago.toFixed(2)}`;
-        document.getElementById('saldo-devedor').innerText = `R$ ${saldoDevedor.toFixed(2)}`;
-        
+        document.getElementById('saldo-devedor').innerText = `R$ ${data.saldoDevedor.toFixed(2)}`;
+
         document.getElementById('status-conta').innerText = `Status: ${data.status}`;
 
     } catch (error) {
-        console.error("Erro ao buscar dados da mesa:", error);
-        alert("Não foi possível carregar os dados da mesa.");
+        console.error("Erro:", error);
+        document.getElementById('numero-mesa').innerText = "Erro";
+        alert("Não foi possível carregar os dados. " + error.message);
     }
 }

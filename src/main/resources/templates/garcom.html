@@ -4,13 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garçom</title>
+
     <link rel="stylesheet" href="/css/style.css">
+
     <script src="/js/auth-guard.js"></script>
     <script src="/js/painel-switcher.js" defer></script>
     <script src="/js/garcom.js" defer></script>
 </head>
 <body>
-<div class="box">
+<header class="header">
+    <nav>
+        <ul>
+            <li><a href="index.html">Voltar ao Início</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="box" style="margin-top: 80px;">
     <h1 class="texto">PAINEL DO GARÇOM</h1>
 
     <select name="Ação" id="acao_garcom">
@@ -29,14 +39,14 @@
             <form class="box" onsubmit="abrirMesa(event)">
                 <h3 class="texto">Abrir Mesa</h3>
                 <input type="number" id="abrir-mesa-numero" placeholder="Número da Mesa">
-                <input type="number" id="add-pessoa-qtd" placeholder="Qtd. de Pessoas (ex: 2)">
+                <input type="number" id="abrir-mesa-pessoas" placeholder="Qtd. de Pessoas (ex: 2)">
                 <button type="submit">Confirmar Abertura</button>
             </form>
         </div>
 
         <div id="painel-2" class="painel-acao">
             <form class="box" onsubmit="adicionarPessoa(event)">
-                <h3 class="texto">Adicionar Pessoa (Futuro)</h3>
+                <h3 class="texto">Adicionar Pessoa</h3>
                 <p class="texto-info">Funcionalidade a implementar no back-end.</p>
             </form>
         </div>
@@ -44,7 +54,8 @@
         <div id="painel-3" class="painel-acao">
             <form class="box" onsubmit="adicionarItem(event)">
                 <h3 class="texto">Adicionar Itens</h3>
-                <input type="number" id="add-item-mesa" placeholder="Número da Mesa"> <input type="number" id="add-item-codigo" placeholder="ID do Item">
+                <input type="number" id="add-item-mesa" placeholder="Número da Mesa / Comanda">
+                <input type="number" id="add-item-codigo" placeholder="ID do Item">
                 <input type="number" id="add-item-qtd" placeholder="Quantidade">
                 <button type="submit">Adicionar Item</button>
             </form>
@@ -53,7 +64,7 @@
         <div id="painel-4" class="painel-acao">
             <form class="box" onsubmit="removerItem(event)">
                 <h3 class="texto">Cancelar Item</h3>
-                <input type="number" id="remover-item-id" placeholder="ID do Pedido">
+                <input type="number" id="remover-item-codigo" placeholder="ID do Pedido">
                 <input type="text" id="remover-item-motivo" placeholder="Motivo do cancelamento">
                 <button type="submit">Cancelar Item</button>
             </form>
@@ -84,6 +95,7 @@
         </div>
     </div>
 </div>
+
 <footer>
     <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v1.0</p>
 </footer>

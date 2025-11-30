@@ -1,30 +1,33 @@
 const formulario = document.querySelector("form");
-const Inome = document.querySelector(".nome");
-const Isenha = document.querySelector(".senha");
 
-function cadastrar() { // end point que era pra ser o de usuários
+function cadastrar() {
+    const login = document.querySelector(".usuario").value;
+    const senha = document.querySelector(".senha").value;
+    const perfil = document.querySelector(".perfil").value; // Novo campo
+
     fetch("http://localhost:8080/cadastrar", {
         headers: {
-            'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
         method: "POST",
         body: JSON.stringify({
-            nome: Inome.value,
-            senha: Isenha.value
+            login: login,
+            senha: senha,
+            perfil: perfil
         })
     })
-    .then(function (res) { console.log(res) })
+    .then(async function (res) {
+        if(res.ok) {
+            alert("Cadastro realizado com sucesso!");
+            window.location.href = "login.html";
+        } else {
+            alert("Erro: " + await res.text());
+        }
+    })
     .catch(function (res) { console.log(res) })
-}
-
-function limpar(){
-    Inome.value = "";
-    Isenha.value = "";
 }
 
 formulario.addEventListener('submit', function(event) {
     event.preventDefault();
     cadastrar();
-    limpar();
 });
