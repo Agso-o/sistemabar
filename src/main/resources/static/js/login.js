@@ -30,7 +30,7 @@ function logar() {
         }
         localStorage.setItem('perfil', perfilDetectado);
 
-        window.location.href = "../index.html";
+        window.location.href = "/index.html";
     })
     .catch(function (error) {
         console.error(error);

@@ -1,9 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Pega o parametro ?mesa=1 da URL
     const params = new URLSearchParams(window.location.search);
-
-    // ATENÇÃO: Seu QR Code envia ?mesa=ID_DA_COMANDA.
-    // O ClienteController espera o ID da Comanda.
     const comandaId = params.get('mesa');
 
     if (comandaId) {
@@ -15,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function carregarConsumo(comandaId) {
-    // URL que criamos no ClienteController.java
     const urlApi = `http://localhost:8080/api/cliente/extrato/${comandaId}`;
 
     try {
@@ -25,12 +20,10 @@ async function carregarConsumo(comandaId) {
             throw new Error('Erro ao buscar comanda. Talvez ela não exista ou já esteja fechada.');
         }
 
-        const data = await response.json(); // Pega o ExtratoDTO do Java
+        const data = await response.json();
 
-        // Preenche o número da mesa no título
         document.getElementById('numero-mesa').innerText = data.numeroMesa;
 
-        // Preenche a tabela de itens
         const tbody = document.getElementById('lista-itens');
         tbody.innerHTML = "";
 
@@ -45,7 +38,6 @@ async function carregarConsumo(comandaId) {
             tbody.innerHTML += row;
         });
 
-        // Preenche os valores do sumário
         document.getElementById('subtotal-comida').innerText = `R$ ${data.subtotalComida.toFixed(2)}`;
         document.getElementById('subtotal-bebida').innerText = `R$ ${data.subtotalBebida.toFixed(2)}`;
         document.getElementById('valor-couvert').innerText = `R$ ${data.couvert.toFixed(2)}`;

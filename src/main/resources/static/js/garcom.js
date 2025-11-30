@@ -22,7 +22,7 @@ async function abrirMesa(event) {
         }
 
         const comanda = await response.json();
-        comandaAtivaId = comanda.id; // Guarda o ID da comanda criada
+        comandaAtivaId = comanda.id;
         alert(`Mesa ${numeroMesa} aberta! Comanda ID: ${comanda.id}`);
         console.log("Comanda:", comanda);
     } catch (error) {
@@ -33,7 +33,6 @@ async function abrirMesa(event) {
 async function adicionarItem(event) {
     event.preventDefault();
 
-    // Tenta pegar o ID do input manual, se não tiver, usa a ativa
     let idParaUsar = document.getElementById('add-item-mesa').value;
     if (!idParaUsar) idParaUsar = comandaAtivaId;
 
@@ -84,8 +83,31 @@ async function registrarPgto(event) {
     }
 }
 
-// Funções placeholder
+async function removerItem(event) {
+    event.preventDefault();
+    const pedidoId = document.getElementById('remover-item-codigo').value;
+    const motivo = document.getElementById('remover-item-motivo').value || "Cancelado pelo garçom";
+
+    try {
+        const response = await fetch(`${API_GARCOM_URL}/cancelar-pedido`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pedidoId: parseInt(pedidoId), motivo })
+        });
+
+        if (!response.ok) {
+            const errorMsg = await response.text();
+            throw new Error('Falha ao cancelar pedido: ' + errorMsg);
+        }
+
+        const pedido = await response.json();
+        alert(`Pedido ${pedido.id} cancelado.`);
+    } catch (error) {
+        console.error(error);
+        alert(error.message);
+    }
+}
+
 function adicionarPessoa(event) { event.preventDefault(); alert("Use 'Abrir Mesa' para definir pessoas."); }
 function alternarCouvert(event) { event.preventDefault(); alert("Funcionalidade futura."); }
 function fecharConta(event) { event.preventDefault(); alert("Funcionalidade futura. Use o pagamento para abater o valor."); }
-function removerItem(event) { event.preventDefault(); alert("Funcionalidade futura."); }

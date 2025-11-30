@@ -3,7 +3,7 @@ const formulario = document.querySelector("form");
 function cadastrar() {
     const login = document.querySelector(".usuario").value;
     const senha = document.querySelector(".senha").value;
-    const perfil = document.querySelector(".perfil").value; // Novo campo
+    const perfil = document.querySelector(".perfil").value;
 
     fetch("http://localhost:8080/cadastrar", {
         headers: {
@@ -19,7 +19,7 @@ function cadastrar() {
     .then(async function (res) {
         if(res.ok) {
             alert("Cadastro realizado com sucesso!");
-            window.location.href = "login.html";
+            window.location.href = "/login.html";
         } else {
             alert("Erro: " + await res.text());
         }

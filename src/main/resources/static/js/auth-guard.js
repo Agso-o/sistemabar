@@ -4,14 +4,14 @@ function protegerPagina(perfilNecessario) {
 
     if (!token) {
         alert("Você precisa estar logado para acessar esta página.");
-        window.location.href = "../../login-cadastro/login.html";
+        window.location.href = "/login.html";
         return;
     }
 
     if (perfilNecessario && perfilNecessario !== perfilUsuario) {
-        if (perfilUsuario === 'ADMIN') return; 
-        
+        if (perfilUsuario === 'ADMIN') return;
+
         alert("Acesso Negado!");
-        window.location.href = "../../index.html";
+        window.location.href = "/index.html";
     }
 }
