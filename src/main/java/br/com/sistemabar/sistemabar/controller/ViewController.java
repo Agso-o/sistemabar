@@ -24,7 +24,6 @@ public class ViewController {
     @GetMapping("/cliente/mesa")
     public String clienteMesa() { return "cliente"; }
 
-    // --- NOVA ROTA ---
     @GetMapping("/admin/qrcode")
     public String qrcodeMesas() { return "qrcode_mesas"; }
 }

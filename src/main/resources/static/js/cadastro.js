@@ -19,7 +19,7 @@ function cadastrar() {
     .then(async function (res) {
         if(res.ok) {
             alert("Cadastro realizado com sucesso!");
-            window.location.href = "/login.html";
+            window.location.href = "/login";
         } else {
             alert("Erro: " + await res.text());
         }

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro</title>
-
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/cadastro.js" defer></script>
 </head>
@@ -12,7 +11,7 @@
 <header class="header">
     <nav>
         <ul>
-            <li><a href="index.html">Voltar ao Início</a></li>
+            <li><a href="/">Voltar ao Início</a></li>
         </ul>
     </nav>
 </header>
@@ -22,17 +21,15 @@
     <form action="">
         <input type="text" class="usuario" name="login" placeholder="Nome de Usuário (Login)" required>
         <input type="password" class="senha" name="senha" placeholder="Senha" required>
-
         <select class="perfil" name="perfil" style="width: 270px; height: 30px; border-radius: 10px; padding: 0 10px;">
             <option value="GARCOM">Garçom</option>
             <option value="ADMIN">Administrador</option>
         </select>
-
         <button type="submit">Cadastrar</button>
     </form>
 
     <p class="texto" style="font-size: 14px; margin-top: 15px;">
-        Já tem conta? <a href="login.html" style="color: yellow;">Faça Login</a>
+        Já tem conta? <a href="/login" style="color: yellow;">Faça Login</a>
     </p>
 </div>
 

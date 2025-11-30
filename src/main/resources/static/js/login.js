@@ -22,14 +22,9 @@ function logar() {
         }
     })
     .then(function (data) {
-        // Salva o token
         localStorage.setItem('token', data.token);
-
-        // AGORA SALVA O PERFIL REAL QUE VEIO DO JAVA
         localStorage.setItem('perfil', data.perfil);
-
-        // Redireciona
-        window.location.href = "/index.html";
+        window.location.href = "/";
     })
     .catch(function (error) {
         console.error(error);

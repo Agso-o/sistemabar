@@ -2,7 +2,7 @@ protegerPagina(null);
 
 const API_URL = "http://localhost:8080/api/admin/mesas";
 
-const BASE_URL_CLIENTE = "http://localhost:8080/cliente.html";
+const BASE_URL_CLIENTE = "http://localhost:8080/cliente/mesa";
 
 document.addEventListener('DOMContentLoaded', () => {
     carregarMesas();

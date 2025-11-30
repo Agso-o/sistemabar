@@ -14,7 +14,6 @@ function verificarUsuario() {
     const btnSair = document.getElementById('btn-sair');
     const btnQr = document.getElementById('btn-qrcode');
 
-    // Se NÃO tem token, mostra a tela de login
     if (!token) {
         painelPublico.style.display = 'flex';
         painelAdmin.style.display = 'none';
@@ -22,16 +21,15 @@ function verificarUsuario() {
 
         btnLogin.style.display = 'block';
         btnSair.style.display = 'none';
-        if(btnQr) btnQr.style.display = 'none';
+
+        if (btnQr) btnQr.style.display = 'none';
         return;
     }
 
-    // Se TEM token, esconde o público
     painelPublico.style.display = 'none';
     btnLogin.style.display = 'none';
     btnSair.style.display = 'block';
 
-    // Mostra o painel correto
     if (perfil === 'ADMIN') {
         painelAdmin.style.display = 'flex';
         painelGarcom.style.display = 'none';

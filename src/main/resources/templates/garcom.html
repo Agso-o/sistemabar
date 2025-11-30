@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garçom</title>
-
     <link rel="stylesheet" href="/css/style.css">
-
     <script src="/js/auth-guard.js"></script>
     <script src="/js/painel-switcher.js" defer></script>
     <script src="/js/garcom.js" defer></script>
@@ -15,14 +13,13 @@
 <header class="header">
     <nav>
         <ul>
-            <li><a href="index.html">Voltar ao Início</a></li>
+            <li><a href="/">Voltar ao Início</a></li>
         </ul>
     </nav>
 </header>
 
 <div class="box" style="margin-top: 80px;">
     <h1 class="texto">PAINEL DO GARÇOM</h1>
-
     <select name="Ação" id="acao_garcom">
         <option value="0">Selecione uma ação...</option>
         <option value="1">Abrir mesa</option>
@@ -43,14 +40,12 @@
                 <button type="submit">Confirmar Abertura</button>
             </form>
         </div>
-
         <div id="painel-2" class="painel-acao">
             <form class="box" onsubmit="adicionarPessoa(event)">
                 <h3 class="texto">Adicionar Pessoa</h3>
                 <p class="texto-info">Funcionalidade a implementar no back-end.</p>
             </form>
         </div>
-
         <div id="painel-3" class="painel-acao">
             <form class="box" onsubmit="adicionarItem(event)">
                 <h3 class="texto">Adicionar Itens</h3>
@@ -60,7 +55,6 @@
                 <button type="submit">Adicionar Item</button>
             </form>
         </div>
-
         <div id="painel-4" class="painel-acao">
             <form class="box" onsubmit="removerItem(event)">
                 <h3 class="texto">Cancelar Item</h3>
@@ -69,14 +63,12 @@
                 <button type="submit">Cancelar Item</button>
             </form>
         </div>
-
         <div id="painel-5" class="painel-acao">
             <form class="box" onsubmit="alternarCouvert(event)">
                 <h3 class="texto">Habilitar/Dispensar Couvert</h3>
                 <p class="texto-info">Funcionalidade a implementar no back-end.</p>
             </form>
         </div>
-
         <div id="painel-6" class="painel-acao">
             <form class="box" onsubmit="fecharConta(event)">
                 <h3 class="texto">Fechar Conta</h3>
@@ -84,7 +76,6 @@
                 <button type="submit">Fechar Conta</button>
             </form>
         </div>
-
         <div id="painel-7" class="painel-acao">
             <form class="box" onsubmit="registrarPgto(event)">
                 <h3 class="texto">Registrar Pagamento</h3>
