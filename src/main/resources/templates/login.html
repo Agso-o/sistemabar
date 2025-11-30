@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Bar do Pedrão</title>
+    <title>Entrar - Bar do Pedrão</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/login.js" defer></script>
 </head>
@@ -17,20 +17,27 @@
 </header>
 
 <div class="box" style="margin-top: 80px;">
-    <h1 class="texto">Faça seu Login:</h1>
-    <form action="">
-        <input type="text" class="usuario" name="usuario" placeholder="Login / Usuário">
-        <input type="password" class="senha" name="senha" placeholder="Senha">
-        <button type="submit">Entrar</button>
-    </form>
+    <h1 class="texto">Bem-vindo(a)</h1>
+    <h3 class="texto">Selecione como deseja entrar:</h3>
 
-    <p class="texto" style="font-size: 14px; margin-top: 15px;">
-        Não tem conta? <a href="/cadastro" style="color: yellow;">Cadastre-se</a>
-    </p>
+    <form class="box" style="margin-top: 20px;">
+
+        <select id="login-perfil" onchange="alternarCampos()" style="width: 270px; height: 35px; border-radius: 10px; padding: 5px;">
+            <option value="GARCOM">Sou Garçom</option>
+            <option value="ADMIN">Sou Administrador</option>
+            <option value="CLIENTE">Sou Cliente</option>
+        </select>
+
+        <div id="campo-senha-container">
+            <input type="password" id="login-senha" placeholder="Digite sua senha" style="width: 250px;">
+        </div>
+
+        <button type="submit" id="btn-entrar">Entrar</button>
+    </form>
 </div>
 
 <footer>
-    <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v1.0</p>
+    <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v2.0</p>
 </footer>
 </body>
 </html>
