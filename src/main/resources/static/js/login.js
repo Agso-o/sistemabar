@@ -22,14 +22,13 @@ function logar() {
         }
     })
     .then(function (data) {
+        // Salva o token
         localStorage.setItem('token', data.token);
 
-        let perfilDetectado = "GARCOM";
-        if (Iusuario.value.toLowerCase().includes("admin")) {
-            perfilDetectado = "ADMIN";
-        }
-        localStorage.setItem('perfil', perfilDetectado);
+        // AGORA SALVA O PERFIL REAL QUE VEIO DO JAVA
+        localStorage.setItem('perfil', data.perfil);
 
+        // Redireciona
         window.location.href = "/index.html";
     })
     .catch(function (error) {
