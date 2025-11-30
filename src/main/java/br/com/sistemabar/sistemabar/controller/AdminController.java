@@ -5,6 +5,7 @@ import br.com.sistemabar.sistemabar.dto.ItemMaisVendidoDTO;
 import br.com.sistemabar.sistemabar.model.Configuracao;
 import br.com.sistemabar.sistemabar.model.ItemCardapio;
 import br.com.sistemabar.sistemabar.model.Mesa;
+import br.com.sistemabar.sistemabar.repository.MesaRepository;
 import br.com.sistemabar.sistemabar.service.AdminService;
 import br.com.sistemabar.sistemabar.service.RelatorioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
-// @PreAuthorize("hasRole('ADMIN')") // Ative isso quando o Spring Security estiver 100%
 public class AdminController {
 
     @Autowired private AdminService adminService;
     @Autowired private RelatorioService relatorioService;
+    @Autowired private MesaRepository mesaRepository; // Injeção direta para busca rápida
 
     // --- CARDÁPIO ---
     @GetMapping("/cardapio")
@@ -53,6 +54,17 @@ public class AdminController {
     @GetMapping("/mesas")
     public ResponseEntity<List<Mesa>> listarMesas() {
         return ResponseEntity.ok(adminService.listarMesas());
+    }
+
+    // Endpoint NOVO para buscar mesa específica pelo número
+    @GetMapping("/mesas/buscar")
+    public ResponseEntity<?> buscarMesaPorNumero(@RequestParam int numero) {
+        Mesa mesa = mesaRepository.findByNumero(numero);
+        if (mesa != null) {
+            return ResponseEntity.ok(mesa);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/mesas")

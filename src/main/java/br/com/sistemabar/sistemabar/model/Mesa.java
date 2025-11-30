@@ -10,27 +10,24 @@ public class Mesa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // O número da mesa (Mesa 1, Mesa 2, etc.)
-    // unique=true garante que não teremos duas mesas "Número 5"
+    // unique=true garante que não teremos duas mesas com o mesmo número
     @Column(nullable = false, unique = true)
     private int numero;
 
-    // Diz ao JPA para salvar o Enum como String ("LIVRE", "OCUPADA")
-    // em vez de um número (0, 1)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusMesa status;
 
     // --- Construtores ---
     public Mesa() {
-        // Construtor vazio para o JPA
     }
 
     public Mesa(int numero) {
         this.numero = numero;
-        this.status = StatusMesa.LIVRE; // Toda mesa nova começa livre
+        this.status = StatusMesa.FECHADA; // <--- Nasce FECHADA por padrão
     }
 
+    // --- Getters e Setters ---
     public Long getId() {
         return id;
     }

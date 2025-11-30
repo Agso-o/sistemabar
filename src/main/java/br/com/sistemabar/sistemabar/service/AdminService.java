@@ -16,7 +16,6 @@ import java.util.List;
 @Service
 public class AdminService {
 
-    // --- Injeção de Dependência ---
     private final MesaRepository mesaRepository;
     private final ItemCardapioRepository itemCardapioRepository;
     private final ConfiguracaoRepository configuracaoRepository;
@@ -34,7 +33,6 @@ public class AdminService {
 
     @Transactional
     public ItemCardapio salvarItemCardapio(ItemCardapio item) {
-        // Validações básicas
         if (item.getNome() == null || item.getNome().isBlank()) {
             throw new RuntimeException("O nome do item é obrigatório.");
         }
@@ -43,7 +41,6 @@ public class AdminService {
         }
         return itemCardapioRepository.save(item);
     }
-
 
     @Transactional
     public void deletarItemCardapio(Long itemId) {
@@ -64,22 +61,20 @@ public class AdminService {
         if (mesa.getNumero() <= 0) {
             throw new RuntimeException("O número da mesa é inválido.");
         }
-        // Garante que o status seja 'LIVRE' ao criar/salvar,
-        // a menos que já esteja 'OCUPADA'
+        // Garante que o status seja 'FECHADA' ao criar, se não for informado
         if (mesa.getStatus() == null) {
-            mesa.setStatus(StatusMesa.LIVRE);
+            mesa.setStatus(StatusMesa.FECHADA);
         }
         return mesaRepository.save(mesa);
     }
-
 
     @Transactional
     public void deletarMesa(Long mesaId) {
         Mesa mesa = mesaRepository.findById(mesaId)
                 .orElseThrow(() -> new RuntimeException("Mesa não encontrada."));
 
-        if (mesa.getStatus() == StatusMesa.OCUPADA) {
-            throw new RuntimeException("Não é possível deletar uma mesa ocupada.");
+        if (mesa.getStatus() == StatusMesa.ABERTA) {
+            throw new RuntimeException("Não é possível deletar uma mesa ABERTA (Ocupada).");
         }
         mesaRepository.delete(mesa);
     }
@@ -88,24 +83,21 @@ public class AdminService {
         return mesaRepository.findAll();
     }
 
-    public Configuracao getConfiguracoes() {
-        // .findById(1L) busca a linha de ID 1. Se não achar, cria uma padrão.
-        return configuracaoRepository.findById(1L)
-                .orElse(new Configuracao()); // Retorna um objeto vazio se não existir
-    }
+    // --- Configurações ---
 
+    public Configuracao getConfiguracoes() {
+        return configuracaoRepository.findById(1L)
+                .orElse(new Configuracao());
+    }
 
     @Transactional
     public Configuracao salvarConfiguracoes(Configuracao config) {
-        // Garante que estamos sempre salvando na ID=1
         config.setId(1L);
-
         if (config.getPercentualGorjetaBebida() < 0 ||
                 config.getPercentualGorjetaComida() < 0 ||
                 config.getValorCouvertPessoa() < 0) {
             throw new RuntimeException("Valores de configuração não podem ser negativos.");
         }
-
         return configuracaoRepository.save(config);
     }
 }
