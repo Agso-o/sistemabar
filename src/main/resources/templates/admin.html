@@ -14,12 +14,14 @@
     <nav>
         <ul>
             <li><a href="/">Voltar ao Início</a></li>
+            <li><a href="/admin/qrcode">Gerar QR Codes</a></li>
         </ul>
     </nav>
 </header>
 
 <div class="box" style="margin-top: 80px;">
     <h1 class="texto">PAINEL DO ADMINISTRADOR</h1>
+
     <select name="Ação" id="acao_admin">
         <option value="0">Selecione uma ação...</option>
         <option value="1">Cadastrar/Editar Mesas</option>
@@ -30,31 +32,38 @@
     </select>
 
     <div id="paineis-container">
+
         <div id="painel-1" class="painel-acao">
             <form class="box" onsubmit="verificarMesa(event)">
                 <h3 class="texto">Gerenciar Mesas</h3>
                 <input type="number" id="mesa-numero" placeholder="Insira o Número da Mesa">
                 <button type="submit">Verificar</button>
             </form>
-            <div id="mesa-create-panel" class="sub-painel">
+
+            <div id="mesa-create-panel" class="sub-painel" style="display: none;">
                 <form class="box" onsubmit="criarMesa(event)">
                     <h3 class="texto">Mesa não existe.</h3>
+                    <p class="texto-info">Clique abaixo para cadastrá-la no sistema.</p>
                     <button type="submit">Cadastrar Mesa</button>
                 </form>
             </div>
-            <div id="mesa-edit-panel" class="sub-painel">
+
+            <div id="mesa-edit-panel" class="sub-painel" style="display: none;">
                 <form class="box" onsubmit="editarMesa(event)">
                     <h3 class="texto">Editando Mesa:</h3>
                     <input type="hidden" id="mesa-edit-id">
+
                     <label class="texto">Número:</label>
-                    <input type="number" id="mesa-edit-numero">
+                    <input type="number" id="mesa-edit-numero" required>
+
                     <label class="texto">Status:</label>
-                    <select id="mesa-edit-status" style="width: 250px; height: 30px;">
+                    <select id="mesa-edit-status" style="width: 250px; height: 30px; margin-bottom: 10px;">
                         <option value="FECHADA">FECHADA (Disponível)</option>
                         <option value="ABERTA">ABERTA (Em uso)</option>
                     </select>
+
                     <button type="submit" style="background-color: #28a745; margin-top: 15px;">Salvar</button>
-                    <button type="button" onclick="deletarMesa()" style="background-color: #dc3545; margin-top: 10px;">Excluir</button>
+                    <button type="button" id="btn-excluir-mesa" style="background-color: #dc3545; margin-top: 10px;">Excluir</button>
                 </form>
             </div>
         </div>
@@ -62,38 +71,32 @@
         <div id="painel-2" class="painel-acao">
             <form class="box" onsubmit="verificarItem(event)">
                 <h3 class="texto">Gerenciar Cardápio</h3>
-                <input type="number" id="item-codigo" placeholder="Código/Número do Item">
+                <input type="number" id="item-codigo" placeholder="Código (ID) do Item">
                 <button type="submit">Verificar</button>
             </form>
 
-            <div id="item-create-panel" class="sub-painel">
+            <div id="item-create-panel" class="sub-painel" style="display: none;">
                 <form class="box" onsubmit="criarItem(event)">
                     <h3 class="texto">Item não existe. Criar novo:</h3>
-
-                    <label class="texto">Número (Código):</label>
-                    <input type="number" id="item-create-numero" required>
-
                     <input type="text" id="item-create-nome" placeholder="Nome do Item" required>
                     <input type="number" id="item-create-preco" step="0.01" placeholder="Preço (R$)" required>
-
                     <label class="texto">Tipo:</label>
-                    <select id="item-create-tipo-select" style="width: 250px; height: 30px;">
+                    <select id="item-create-tipo-select" style="width: 250px; height: 30px; margin-bottom: 10px;">
                         <option value="2">Bebida</option>
                         <option value="3">Comida</option>
+                        <option value="1">Outros/Ingresso</option>
                     </select>
                     <button type="submit">Criar Item</button>
                 </form>
             </div>
 
-            <div id="item-edit-panel" class="sub-painel">
+            <div id="item-edit-panel" class="sub-painel" style="display: none;">
                 <form class="box" onsubmit="editarItem(event)">
                     <h3 class="texto">Editando Item:</h3>
-                    <p class="texto" style="font-size: 12px;">Status: <span id="item-status-label">...</span></p>
-
                     <input type="hidden" id="item-edit-id">
 
-                    <label class="texto">Número (Código):</label>
-                    <input type="number" id="item-edit-numero" required>
+                    <label class="texto">Código (ID):</label>
+                    <input type="number" id="item-edit-numero" readonly style="background-color: #ddd;">
 
                     <label class="texto">Nome:</label>
                     <input type="text" id="item-edit-nome" required>
@@ -102,13 +105,14 @@
                     <input type="number" id="item-edit-preco" step="0.01" required>
 
                     <label class="texto">Tipo:</label>
-                    <select id="item-edit-tipo-select" style="width: 250px; height: 30px;">
+                    <select id="item-edit-tipo-select" style="width: 250px; height: 30px; margin-bottom: 10px;">
                         <option value="2">Bebida</option>
                         <option value="3">Comida</option>
+                        <option value="1">Outros/Ingresso</option>
                     </select>
 
                     <button type="submit" style="background-color: #28a745; margin-top: 15px;">Salvar Alterações</button>
-                    <button type="button" onclick="deletarItem()" style="background-color: #dc3545; margin-top: 10px;">Excluir (Inativar)</button>
+                    <button type="button" id="btn-excluir-item" style="background-color: #dc3545; margin-top: 10px;">Excluir</button>
                 </form>
             </div>
         </div>
@@ -117,7 +121,7 @@
             <form class="box" onsubmit="definirCouvert(event)">
                 <h3 class="texto">Definir Preço do Couvert</h3>
                 <p class="texto">Valor Atual: R$ <span id="couvert-atual">0.00</span></p>
-                <input type="number" id="couvert-novo-valor" placeholder="Novo Valor (R$)">
+                <input type="number" id="couvert-novo-valor" placeholder="Novo Valor (R$)" step="0.01">
                 <button type="submit">Salvar Valor</button>
             </form>
         </div>
@@ -142,7 +146,7 @@
                 <input type="date" id="relatorio-fim">
                 <button type="submit">Gerar Relatório</button>
             </form>
-            <div id="relatorio-resultado" class="sub-painel box">
+            <div id="relatorio-resultado" class="sub-painel box" style="display: none; margin-top: 20px;">
                 <h3 class="texto">Relatório do Período</h3>
                 <p class="texto">Faturamento Total: R$ <span id="rel-faturamento">...</span></p>
                 <p class="texto">Item Mais Vendido: <span id="rel-mais-vendido">...</span></p>

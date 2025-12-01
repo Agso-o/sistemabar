@@ -1,72 +1,59 @@
-protegerPagina('ADMIN');
-
-setupPanelSwitcher('acao_admin', 'painel-acao', 'painel-');
-
-const API_ADMIN_URL = "http://localhost:8080/api/admin";
-
-function mostrarSubPainel(painelId, mostrar) {
-    const painel = document.getElementById(painelId);
-    if (painel) {
-        painel.style.display = mostrar ? 'flex' : 'none';
-    }
+// Verifica se é admin
+if (typeof protegerPagina === "function") {
+    protegerPagina('ADMIN');
 }
 
-// --- LOGICA DE MESAS (Busca por Numero + Status Fechada/Aberta) ---
+let mesaEmEdicao = null;
+let itemEmEdicao = null;
+
+// --- 1. GERENCIAR MESAS ---
 
 async function verificarMesa(event) {
     event.preventDefault();
     const numeroMesa = document.getElementById('mesa-numero').value;
-
-    if(!numeroMesa) { alert("Digite o número da mesa"); return; }
-
-    mostrarSubPainel('mesa-edit-panel', false);
-    mostrarSubPainel('mesa-create-panel', false);
+    if (!numeroMesa) return alert("Digite o número!");
 
     try {
-        const response = await fetch(`${API_ADMIN_URL}/mesas/buscar?numero=${numeroMesa}`);
+        const response = await fetch('/api/admin/mesas');
+        const mesas = await response.json();
+        const mesaEncontrada = mesas.find(m => m.numero == numeroMesa);
 
-        if (response.status === 404) {
-            // Mesa NÃO existe -> Painel Criar
-            mostrarSubPainel('mesa-create-panel', true);
-        } else if (response.ok) {
-            // Mesa EXISTE -> Painel Editar
-            const mesa = await response.json();
+        document.getElementById('mesa-create-panel').style.display = 'none';
+        document.getElementById('mesa-edit-panel').style.display = 'none';
 
-            document.getElementById('mesa-edit-id').value = mesa.id;
-            document.getElementById('mesa-edit-numero').value = mesa.numero;
-            document.getElementById('mesa-edit-status').value = mesa.status;
+        if (mesaEncontrada) {
+            mesaEmEdicao = mesaEncontrada;
+            // Preenche o formulário de edição
+            document.getElementById('mesa-edit-id').value = mesaEncontrada.id;
+            document.getElementById('mesa-edit-numero').value = mesaEncontrada.numero;
+            document.getElementById('mesa-edit-status').value = mesaEncontrada.status; // Vai bater com FECHADA ou ABERTA
+            
+            // Configura botão de excluir
+            document.getElementById('btn-excluir-mesa').onclick = () => deletarMesa(mesaEncontrada.id);
 
-            mostrarSubPainel('mesa-edit-panel', true);
+            document.getElementById('mesa-edit-panel').style.display = 'block';
+        } else {
+            document.getElementById('mesa-create-panel').style.display = 'block';
         }
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao verificar mesa.");
-    }
+    } catch (e) { console.error(e); alert("Erro ao buscar mesas."); }
 }
 
 async function criarMesa(event) {
     event.preventDefault();
-    const numeroMesa = document.getElementById('mesa-numero').value;
-
-    // Cria mesa com status padrão FECHADA
-    const payload = {
-        numero: parseInt(numeroMesa),
-        status: 'FECHADA'
-    };
+    const numero = document.getElementById('mesa-numero').value;
 
     try {
-        const response = await fetch(`${API_ADMIN_URL}/mesas`, {
+        const response = await fetch('/api/admin/mesas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ 
+                numero: numero, 
+                status: 'FECHADA' // Padrão: Disponível
+            })
         });
-        if (!response.ok) throw new Error("Falha ao criar mesa (Número duplicado?).");
-
-        alert(`Mesa ${numeroMesa} criada com sucesso!`);
-        window.location.reload();
-    } catch (error) {
-        alert(error.message);
-    }
+        if (response.ok) { alert("Mesa criada!"); location.reload(); } 
+        else { alert("Erro: " + await response.text()); }
+    } catch (e) { console.error(e); }
 }
 
 async function editarMesa(event) {
@@ -75,222 +62,185 @@ async function editarMesa(event) {
     const numero = document.getElementById('mesa-edit-numero').value;
     const status = document.getElementById('mesa-edit-status').value;
 
-    const payload = {
-        id: parseInt(id),
-        numero: parseInt(numero),
-        status: status
-    };
-
     try {
-        const response = await fetch(`${API_ADMIN_URL}/mesas`, {
-            method: 'POST',
+        const response = await fetch('/api/admin/mesas', {
+            method: 'POST', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ id: parseInt(id), numero: parseInt(numero), status: status })
         });
-        if (!response.ok) throw new Error("Falha ao atualizar mesa.");
-
-        alert(`Mesa ${numero} atualizada!`);
-        window.location.reload();
-    } catch (error) {
-        alert(error.message);
-    }
+        if (response.ok) { alert("Mesa atualizada!"); location.reload(); }
+        else { alert("Erro ao atualizar: " + await response.text()); }
+    } catch (e) { console.error(e); }
 }
 
-async function deletarMesa() {
-    const id = document.getElementById('mesa-edit-id').value;
-    if(!confirm("Tem certeza que deseja excluir esta mesa?")) return;
-
+async function deletarMesa(id) {
+    if(!confirm("Excluir esta mesa?")) return;
     try {
-        const response = await fetch(`${API_ADMIN_URL}/mesas/${id}`, {
-            method: 'DELETE'
-        });
-        if (!response.ok) throw new Error("Não é possível deletar mesa ABERTA.");
-
-        alert("Mesa excluída!");
-        window.location.reload();
-    } catch (error) {
-        alert(error.message);
-    }
+        const response = await fetch(`/api/admin/mesas/${id}`, { method: 'DELETE' });
+        if (response.ok) { alert("Mesa excluída!"); location.reload(); }
+        else { alert("Erro ao excluir: " + await response.text()); }
+    } catch (e) { console.error(e); }
 }
 
-// --- LOGICA DE CARDÁPIO (Usa Número Visual + Soft Delete) ---
+
+// --- 2. GERENCIAR CARDÁPIO ---
 
 async function verificarItem(event) {
     event.preventDefault();
-    const numero = document.getElementById('item-codigo').value;
-    if (!numero) {
-        alert("Digite o Código/Número do item.");
-        return;
-    }
-
-    mostrarSubPainel('item-create-panel', false);
-    mostrarSubPainel('item-edit-panel', false);
+    const codigo = document.getElementById('item-codigo').value;
+    if(!codigo) return alert("Digite o código!");
 
     try {
-        // Busca pelo NÚMERO
-        const response = await fetch(`${API_ADMIN_URL}/cardapio/buscar?numero=${numero}`);
+        const res = await fetch('/api/admin/cardapio');
+        const itens = await res.json();
+        
+        // Procura pelo ID
+        const item = itens.find(i => i.id == codigo);
 
-        if (response.status === 404) {
-            // Não achou -> Sugere criar
-            mostrarSubPainel('item-create-panel', true);
-            document.getElementById('item-create-numero').value = numero;
-        } else if (response.ok) {
-            // Achou -> Painel Editar
-            const item = await response.json();
+        document.getElementById('item-create-panel').style.display = 'none';
+        document.getElementById('item-edit-panel').style.display = 'none';
 
+        if (item) {
+            itemEmEdicao = item;
             document.getElementById('item-edit-id').value = item.id;
-            document.getElementById('item-edit-numero').value = item.numero;
+            document.getElementById('item-edit-numero').value = item.id;
             document.getElementById('item-edit-nome').value = item.nome;
             document.getElementById('item-edit-preco').value = item.preco;
             document.getElementById('item-edit-tipo-select').value = item.tipo;
+            
+            // Configura botão de excluir
+            document.getElementById('btn-excluir-item').onclick = () => deletarItem(item.id);
 
-            const statusTexto = item.ativo ? "ATIVO" : "INATIVO (Excluído)";
-            document.getElementById('item-status-label').innerText = statusTexto;
-
-            mostrarSubPainel('item-edit-panel', true);
+            document.getElementById('item-edit-panel').style.display = 'block';
+        } else {
+            // Criação
+            document.getElementById('item-create-panel').style.display = 'block';
         }
-    } catch (error) {
-        alert("Erro ao verificar item.");
-    }
+    } catch (e) { console.error(e); }
 }
 
 async function criarItem(event) {
     event.preventDefault();
-    const numero = document.getElementById('item-create-numero').value;
     const nome = document.getElementById('item-create-nome').value;
     const preco = document.getElementById('item-create-preco').value;
-    const tipoVal = document.getElementById('item-create-tipo-select').value;
-    const categoria = tipoVal == '2' ? 'Bebida' : 'Comida';
+    const tipo = document.getElementById('item-create-tipo-select').value;
+    
+    const categoria = tipo == 2 ? "Bebidas" : (tipo == 3 ? "Comidas" : "Outros");
 
     try {
-        const response = await fetch(`${API_ADMIN_URL}/cardapio`, {
+        const response = await fetch('/api/admin/cardapio', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                numero: parseInt(numero),
-                nome: nome,
-                preco: parseFloat(preco),
-                tipo: parseInt(tipoVal),
-                categoria: categoria
-            })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nome, preco, tipo, categoria })
         });
-        if (!response.ok) {
-             const msg = await response.text();
-             throw new Error(msg);
-        }
-        alert(`Item ${nome} criado!`);
-        window.location.reload();
-    } catch (error) {
-        alert("Erro: " + error.message);
-    }
+        if(response.ok) { alert("Item criado!"); location.reload(); }
+        else { alert("Erro ao criar."); }
+    } catch (e) { console.error(e); }
 }
 
 async function editarItem(event) {
     event.preventDefault();
     const id = document.getElementById('item-edit-id').value;
-    const numero = document.getElementById('item-edit-numero').value;
     const nome = document.getElementById('item-edit-nome').value;
     const preco = document.getElementById('item-edit-preco').value;
-    const tipoVal = document.getElementById('item-edit-tipo-select').value;
-    const categoria = tipoVal == '2' ? 'Bebida' : 'Comida';
+    const tipo = document.getElementById('item-edit-tipo-select').value;
+    const categoria = tipo == 2 ? "Bebidas" : (tipo == 3 ? "Comidas" : "Outros");
 
     try {
-        const response = await fetch(`${API_ADMIN_URL}/cardapio`, {
+        const response = await fetch('/api/admin/cardapio', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: parseInt(id),
-                numero: parseInt(numero),
-                nome: nome,
-                preco: parseFloat(preco),
-                tipo: parseInt(tipoVal),
-                categoria: categoria,
-                ativo: true // Editar sempre reativa (se estiver inativo)
-            })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id, nome, preco, tipo, categoria })
         });
-        if (!response.ok) {
-            const msg = await response.text();
-            throw new Error(msg);
-        }
-        alert(`Item atualizado!`);
-        window.location.reload();
-    } catch (error) {
-        alert("Erro: " + error.message);
-    }
+        if(response.ok) { alert("Item atualizado!"); location.reload(); }
+        else { alert("Erro ao atualizar."); }
+    } catch (e) { console.error(e); }
 }
 
-async function deletarItem() {
-    const id = document.getElementById('item-edit-id').value;
-    if(!confirm("Tem certeza? O item ficará INATIVO, mas não será apagado do banco.")) return;
-
+async function deletarItem(id) {
+    if(!confirm("Excluir este item?")) return;
     try {
-        const response = await fetch(`${API_ADMIN_URL}/cardapio/${id}`, {
-            method: 'DELETE'
-        });
-        if (!response.ok) throw new Error("Erro ao inativar item.");
-
-        alert("Item Inativado com sucesso!");
-        window.location.reload();
-    } catch (error) {
-        alert(error.message);
-    }
+        const response = await fetch(`/api/admin/cardapio/${id}`, { method: 'DELETE' });
+        if(response.ok) { alert("Item excluído!"); location.reload(); }
+        else { alert("Erro."); }
+    } catch (e) { console.error(e); }
 }
 
-// --- LOGICA DE CONFIG E RELATÓRIOS ---
+// ... (Funções de Config e Relatório mantidas iguais) ...
+// (Lembre-se de incluir as funções carregarConfiguracoes, definirCouvert, definirGorjeta, gerarRelatorio aqui)
+async function carregarConfiguracoes() {
+    try {
+        const response = await fetch('/api/admin/configuracoes');
+        if (response.ok) {
+            const config = await response.json();
+            if(document.getElementById('couvert-atual')) 
+                document.getElementById('couvert-atual').innerText = config.valorCouvertPessoa.toFixed(2);
+            if(document.getElementById('gorjeta-bebidas-atual'))
+                document.getElementById('gorjeta-bebidas-atual').innerText = (config.percentualGorjetaBebida * 100).toFixed(0);
+            if(document.getElementById('gorjeta-comidas-atual'))
+                document.getElementById('gorjeta-comidas-atual').innerText = (config.percentualGorjetaComida * 100).toFixed(0);
+            return config;
+        }
+    } catch (e) {}
+    return null;
+}
 
 async function definirCouvert(event) {
     event.preventDefault();
-    const couvert = document.getElementById('couvert-novo-valor').value;
-
-    try {
-        const response = await fetch(`${API_ADMIN_URL}/configuracoes`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gorjetaBebida: 0, gorjetaComida: 0, valorCouvertPessoa: couvert })
-        });
-        if (!response.ok) throw new Error("Erro.");
-        alert("Couvert salvo!");
-    } catch (error) {
-        alert(error.message);
-    }
+    const novoValor = parseFloat(document.getElementById('couvert-novo-valor').value);
+    const configAtual = await carregarConfiguracoes();
+    if (!configAtual) return;
+    configAtual.valorCouvertPessoa = novoValor;
+    await salvarConfig(configAtual);
 }
 
 async function definirGorjeta(event) {
     event.preventDefault();
-    const gorjetaBebida = document.getElementById('gorjeta-bebidas-nova').value;
-    const gorjetaComida = document.getElementById('gorjeta-comidas-nova').value;
-    const couvert = document.getElementById('couvert-novo-valor').value || 0;
+    const novaBebida = document.getElementById('gorjeta-bebidas-nova').value;
+    const novaComida = document.getElementById('gorjeta-comidas-nova').value;
+    const configAtual = await carregarConfiguracoes();
+    if (!configAtual) return;
+    if (novaBebida) configAtual.percentualGorjetaBebida = parseFloat(novaBebida) / 100;
+    if (novaComida) configAtual.percentualGorjetaComida = parseFloat(novaComida) / 100;
+    await salvarConfig(configAtual);
+}
 
-     try {
-        const response = await fetch(`${API_ADMIN_URL}/configuracoes`, {
+async function salvarConfig(config) {
+    try {
+        const response = await fetch('/api/admin/configuracoes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gorjetaBebida, gorjetaComida, valorCouvertPessoa: couvert })
+            body: JSON.stringify(config)
         });
-        if (!response.ok) throw new Error("Erro.");
-        alert("Gorjetas salvas!");
-    } catch (error) {
-        alert(error.message);
-    }
+        if (response.ok) { alert("Configurações atualizadas!"); location.reload(); }
+    } catch (e) {}
 }
 
 async function gerarRelatorio(event) {
     event.preventDefault();
-    const inicio = document.getElementById('relatorio-inicio').value + "T00:00:00";
-    const fim = document.getElementById('relatorio-fim').value + "T23:59:59";
+    const inicio = document.getElementById('relatorio-inicio').value;
+    const fim = document.getElementById('relatorio-fim').value;
+    if (!inicio || !fim) return alert("Selecione as datas!");
+    const dataInicio = inicio + "T00:00:00";
+    const dataFim = fim + "T23:59:59";
 
     try {
-        const response = await fetch(`${API_ADMIN_URL}/relatorio/faturamento?inicio=${inicio}&fim=${fim}`, {
-            method: 'GET',
-        });
-        if (!response.ok) throw new Error("Erro.");
-
-        const faturamento = await response.json();
-
+        const resFat = await fetch(`/api/admin/relatorio/faturamento?inicio=${dataInicio}&fim=${dataFim}`);
+        const faturamento = await resFat.json();
         document.getElementById('rel-faturamento').innerText = faturamento.toFixed(2);
 
-        mostrarSubPainel('relatorio-resultado', true);
-    } catch (error) {
-        alert(error.message);
-    }
+        const resMais = await fetch(`/api/admin/relatorio/mais-vendidos`);
+        const maisVendidos = await resMais.json();
+        document.getElementById('rel-mais-vendido').innerText = maisVendidos.length > 0 ? `${maisVendidos[0].nomeItem} (${maisVendidos[0].totalVendido})` : "Sem dados";
+
+        const resMaior = await fetch(`/api/admin/relatorio/maior-faturamento`);
+        const maiorFat = await resMaior.json();
+        document.getElementById('rel-maior-faturamento').innerText = maiorFat.length > 0 ? `${maiorFat[0].nomeItem} (R$ ${maiorFat[0].faturamentoTotal.toFixed(2)})` : "Sem dados";
+
+        document.getElementById('relatorio-resultado').style.display = 'block';
+    } catch (error) { alert("Erro ao gerar relatório."); }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    if(document.getElementById('couvert-atual')) carregarConfiguracoes();
+});
