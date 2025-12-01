@@ -26,7 +26,6 @@ public class GarcomController {
     @PostMapping("/add-pedido")
     public ResponseEntity<?> adicionarPedido(@RequestBody AdicionarPedidoRequest request) {
         try {
-            // Agora usa: Numero Mesa, Numero Item, Quantidade
             return ResponseEntity.ok(mesaService.adicionarPedido(request.getNumeroMesa(), request.getNumeroItem(), request.getQuantidade()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -42,10 +41,19 @@ public class GarcomController {
         }
     }
 
+    // NOVO: Consultar Saldo (Etapa 1 do Pagamento)
+    @GetMapping("/saldo")
+    public ResponseEntity<?> consultarSaldo(@RequestParam int mesa) {
+        try {
+            return ResponseEntity.ok(mesaService.consultarSaldoMesa(mesa));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/pagar")
     public ResponseEntity<?> registrarPagamento(@RequestBody RegistrarPagamentoRequest request) {
         try {
-            // Pagar usando o Número da Mesa
             return ResponseEntity.ok(mesaService.registrarPagamento(request.getNumeroMesa(), request.getValor()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -55,7 +63,6 @@ public class GarcomController {
     @PostMapping("/fechar")
     public ResponseEntity<?> fecharConta(@RequestBody FecharContaRequest request) {
         try {
-            // Fechar usando o Número da Mesa
             return ResponseEntity.ok(mesaService.fecharComanda(request.getNumeroMesa()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
