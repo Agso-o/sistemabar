@@ -47,7 +47,7 @@ function gerarQR(idMesa, numeroMesa) {
 
     // A URL que o cliente vai acessar.
     // Usamos window.location.origin para pegar o IP/Localhost correto automaticamente
-    const linkParaOCliente = `${window.location.origin}/cliente/mesa?mesaId=${idMesa}`;
+    const linkParaOCliente = `${window.location.origin}/cliente/mesa?mesa=${numeroMesa}`;
 
     console.log("Gerando QR para:", linkParaOCliente);
 

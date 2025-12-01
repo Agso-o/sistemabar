@@ -16,14 +16,13 @@ public class ClienteController {
     @Autowired
     private ConsultaService consultaService;
 
-    // --- NOVAS INJEÇÕES NECESSÁRIAS PARA O QR CODE ---
     @Autowired
     private MesaRepository mesaRepository;
 
     @Autowired
     private ComandaRepository comandaRepository;
 
-    // Método antigo (busca direta pelo ID da comanda)
+    // Método antigo (busca direta pelo ID da comanda - usado se você acessar /extrato/ID manualmente)
     @GetMapping("/extrato/{comandaId}")
     public ResponseEntity<?> getExtrato(@PathVariable Long comandaId) {
         try {
@@ -33,20 +32,24 @@ public class ClienteController {
         }
     }
 
-    // --- NOVO MÉTODO (ESSENCIAL PARA O QR CODE) ---
-    // O QR Code envia o ID da Mesa. Este método descobre qual é a comanda ABERTA naquela mesa.
-    @GetMapping("/mesa/{mesaId}/atual")
-    public ResponseEntity<?> getComandaAtual(@PathVariable Long mesaId) {
+    // --- CORREÇÃO AQUI ---
+    // Alterado de 'findById' para 'findByNumero'
+    // A URL também mudou para deixar claro que é o número: /mesa/numero/{numero}/atual
+    @GetMapping("/mesa/numero/{numeroMesa}/atual")
+    public ResponseEntity<?> getComandaAtualPorNumero(@PathVariable int numeroMesa) {
         try {
-            // 1. Acha a mesa
-            var mesa = mesaRepository.findById(mesaId)
-                    .orElseThrow(() -> new RuntimeException("Mesa não encontrada"));
+            // 1. Acha a mesa pelo NÚMERO VISUAL (Ex: Mesa 1)
+            var mesa = mesaRepository.findByNumero(numeroMesa);
+
+            if (mesa == null) {
+                throw new RuntimeException("Mesa número " + numeroMesa + " não existe.");
+            }
 
             // 2. Acha a comanda que está ABERTA nesta mesa
             var comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
-                    .orElseThrow(() -> new RuntimeException("Não há conta aberta para esta mesa no momento."));
+                    .orElseThrow(() -> new RuntimeException("A Mesa " + numeroMesa + " está fechada ou livre."));
 
-            // 3. Gera o extrato usando o ID da comanda encontrada
+            // 3. Gera o extrato
             return ResponseEntity.ok(consultaService.gerarExtrato(comanda.getId()));
 
         } catch (Exception e) {
