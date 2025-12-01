@@ -36,31 +36,25 @@
                 <input type="number" id="mesa-numero" placeholder="Insira o Número da Mesa">
                 <button type="submit">Verificar</button>
             </form>
-
             <div id="mesa-create-panel" class="sub-painel">
                 <form class="box" onsubmit="criarMesa(event)">
                     <h3 class="texto">Mesa não existe.</h3>
-                    <p class="texto">Deseja cadastrá-la agora?</p>
                     <button type="submit">Cadastrar Mesa</button>
                 </form>
             </div>
-
             <div id="mesa-edit-panel" class="sub-painel">
                 <form class="box" onsubmit="editarMesa(event)">
                     <h3 class="texto">Editando Mesa:</h3>
                     <input type="hidden" id="mesa-edit-id">
-
                     <label class="texto">Número:</label>
                     <input type="number" id="mesa-edit-numero">
-
                     <label class="texto">Status:</label>
-                    <select id="mesa-edit-status" style="width: 250px; height: 30px; border-radius: 10px; padding: 0 10px;">
+                    <select id="mesa-edit-status" style="width: 250px; height: 30px;">
                         <option value="FECHADA">FECHADA (Disponível)</option>
                         <option value="ABERTA">ABERTA (Em uso)</option>
                     </select>
-
-                    <button type="submit" style="background-color: #28a745; margin-top: 15px;">Salvar Alterações</button>
-                    <button type="button" onclick="deletarMesa()" style="background-color: #dc3545; margin-top: 10px;">Excluir Mesa</button>
+                    <button type="submit" style="background-color: #28a745; margin-top: 15px;">Salvar</button>
+                    <button type="button" onclick="deletarMesa()" style="background-color: #dc3545; margin-top: 10px;">Excluir</button>
                 </form>
             </div>
         </div>
@@ -68,31 +62,57 @@
         <div id="painel-2" class="painel-acao">
             <form class="box" onsubmit="verificarItem(event)">
                 <h3 class="texto">Gerenciar Cardápio</h3>
-                <input type="number" id="item-codigo" placeholder="Insira o Código do Produto (ID)">
+                <input type="number" id="item-codigo" placeholder="Código/Número do Item">
                 <button type="submit">Verificar</button>
             </form>
+
             <div id="item-create-panel" class="sub-painel">
                 <form class="box" onsubmit="criarItem(event)">
                     <h3 class="texto">Item não existe. Criar novo:</h3>
-                    <input type="text" id="item-create-nome" placeholder="Nome do Item">
-                    <input type="number" id="item-create-preco" placeholder="Preço (R$)">
-                    <input type="text" id="item-create-categoria" placeholder="Categoria (Bebida/Comida)">
+
+                    <label class="texto">Número (Código):</label>
+                    <input type="number" id="item-create-numero" required>
+
+                    <input type="text" id="item-create-nome" placeholder="Nome do Item" required>
+                    <input type="number" id="item-create-preco" step="0.01" placeholder="Preço (R$)" required>
+
+                    <label class="texto">Tipo:</label>
+                    <select id="item-create-tipo-select" style="width: 250px; height: 30px;">
+                        <option value="2">Bebida</option>
+                        <option value="3">Comida</option>
+                    </select>
                     <button type="submit">Criar Item</button>
                 </form>
             </div>
+
             <div id="item-edit-panel" class="sub-painel">
                 <form class="box" onsubmit="editarItem(event)">
                     <h3 class="texto">Editando Item:</h3>
-                    <p class="texto">Nome Antigo: <span id="item-old-nome">...</span></p>
-                    <p class="texto">Preço Antigo: <span id="item-old-preco">...</span></p>
-                    <p class="texto">Categoria Antiga: <span id="item-old-categoria">...</span></p>
-                    <input type="text" id="item-new-nome" placeholder="Novo Nome">
-                    <input type="number" id="item-new-preco" placeholder="Novo Preço (R$)">
-                    <input type="text" id="item-new-categoria" placeholder="Nova Categoria">
-                    <button type="submit">Salvar Alterações</button>
+                    <p class="texto" style="font-size: 12px;">Status: <span id="item-status-label">...</span></p>
+
+                    <input type="hidden" id="item-edit-id">
+
+                    <label class="texto">Número (Código):</label>
+                    <input type="number" id="item-edit-numero" required>
+
+                    <label class="texto">Nome:</label>
+                    <input type="text" id="item-edit-nome" required>
+
+                    <label class="texto">Preço (R$):</label>
+                    <input type="number" id="item-edit-preco" step="0.01" required>
+
+                    <label class="texto">Tipo:</label>
+                    <select id="item-edit-tipo-select" style="width: 250px; height: 30px;">
+                        <option value="2">Bebida</option>
+                        <option value="3">Comida</option>
+                    </select>
+
+                    <button type="submit" style="background-color: #28a745; margin-top: 15px;">Salvar Alterações</button>
+                    <button type="button" onclick="deletarItem()" style="background-color: #dc3545; margin-top: 10px;">Excluir (Inativar)</button>
                 </form>
             </div>
         </div>
+
         <div id="painel-3" class="painel-acao">
             <form class="box" onsubmit="definirCouvert(event)">
                 <h3 class="texto">Definir Preço do Couvert</h3>
@@ -101,6 +121,7 @@
                 <button type="submit">Salvar Valor</button>
             </form>
         </div>
+
         <div id="painel-4" class="painel-acao">
             <form class="box" onsubmit="definirGorjeta(event)">
                 <h3 class="texto">Definir Percentual de Gorjeta</h3>
@@ -111,6 +132,7 @@
                 <button type="submit">Salvar Percentuais</button>
             </form>
         </div>
+
         <div id="painel-5" class="painel-acao">
             <form class="box" onsubmit="gerarRelatorio(event)">
                 <h3 class="texto">Acessar Relatórios</h3>

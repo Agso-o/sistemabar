@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdminService {
@@ -33,21 +34,41 @@ public class AdminService {
 
     @Transactional
     public ItemCardapio salvarItemCardapio(ItemCardapio item) {
-        if (item.getNome() == null || item.getNome().isBlank()) {
-            throw new RuntimeException("O nome do item é obrigatório.");
+        if (item.getNome() == null || item.getNome().isBlank()) throw new RuntimeException("Nome obrigatório.");
+        if (item.getPreco() < 0) throw new RuntimeException("Preço negativo.");
+
+        // Verifica se o número já existe em OUTRO item (para evitar duplicação)
+        Optional<ItemCardapio> itemExistente = itemCardapioRepository.findByNumero(item.getNumero());
+
+        if (itemExistente.isPresent()) {
+            if (item.getId() != null && !itemExistente.get().getId().equals(item.getId())) {
+                throw new RuntimeException("Já existe um item com o número " + item.getNumero());
+            }
+            if (item.getId() == null) {
+                throw new RuntimeException("Já existe um item com o número " + item.getNumero());
+            }
         }
-        if (item.getPreco() < 0) {
-            throw new RuntimeException("O preço não pode ser negativo.");
+
+        if (item.getId() == null) {
+            item.setAtivo(true);
         }
+
         return itemCardapioRepository.save(item);
     }
 
     @Transactional
     public void deletarItemCardapio(Long itemId) {
-        if (!itemCardapioRepository.existsById(itemId)) {
-            throw new RuntimeException("Item não encontrado para deletar.");
-        }
-        itemCardapioRepository.deleteById(itemId);
+        ItemCardapio item = itemCardapioRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item não encontrado."));
+
+        // SOFT DELETE: Apenas inativa
+        item.setAtivo(false);
+        itemCardapioRepository.save(item);
+    }
+
+    // Buscar item pelo numero
+    public ItemCardapio buscarItemPorNumero(int numero) {
+        return itemCardapioRepository.findByNumero(numero).orElse(null);
     }
 
     public List<ItemCardapio> listarItensCardapio() {
@@ -55,16 +76,10 @@ public class AdminService {
     }
 
     // --- Gerenciamento de Mesas ---
-
     @Transactional
     public Mesa salvarMesa(Mesa mesa) {
-        if (mesa.getNumero() <= 0) {
-            throw new RuntimeException("O número da mesa é inválido.");
-        }
-        // Garante que o status seja 'FECHADA' ao criar, se não for informado
-        if (mesa.getStatus() == null) {
-            mesa.setStatus(StatusMesa.FECHADA);
-        }
+        if (mesa.getNumero() <= 0) throw new RuntimeException("Número inválido.");
+        if (mesa.getStatus() == null) mesa.setStatus(StatusMesa.FECHADA);
         return mesaRepository.save(mesa);
     }
 
@@ -72,32 +87,20 @@ public class AdminService {
     public void deletarMesa(Long mesaId) {
         Mesa mesa = mesaRepository.findById(mesaId)
                 .orElseThrow(() -> new RuntimeException("Mesa não encontrada."));
-
-        if (mesa.getStatus() == StatusMesa.ABERTA) {
-            throw new RuntimeException("Não é possível deletar uma mesa ABERTA (Ocupada).");
-        }
+        if (mesa.getStatus() == StatusMesa.ABERTA) throw new RuntimeException("Não pode deletar mesa ABERTA.");
         mesaRepository.delete(mesa);
     }
 
-    public List<Mesa> listarMesas() {
-        return mesaRepository.findAll();
-    }
+    public List<Mesa> listarMesas() { return mesaRepository.findAll(); }
 
     // --- Configurações ---
-
     public Configuracao getConfiguracoes() {
-        return configuracaoRepository.findById(1L)
-                .orElse(new Configuracao());
+        return configuracaoRepository.findById(1L).orElse(new Configuracao());
     }
 
     @Transactional
     public Configuracao salvarConfiguracoes(Configuracao config) {
         config.setId(1L);
-        if (config.getPercentualGorjetaBebida() < 0 ||
-                config.getPercentualGorjetaComida() < 0 ||
-                config.getValorCouvertPessoa() < 0) {
-            throw new RuntimeException("Valores de configuração não podem ser negativos.");
-        }
         return configuracaoRepository.save(config);
     }
 }

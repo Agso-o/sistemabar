@@ -1,13 +1,9 @@
 package br.com.sistemabar.sistemabar.controller;
 
-import br.com.sistemabar.sistemabar.dto.ItemMaiorFaturamentoDTO;
-import br.com.sistemabar.sistemabar.dto.ItemMaisVendidoDTO;
-import br.com.sistemabar.sistemabar.model.Configuracao;
-import br.com.sistemabar.sistemabar.model.ItemCardapio;
-import br.com.sistemabar.sistemabar.model.Mesa;
-import br.com.sistemabar.sistemabar.repository.MesaRepository;
-import br.com.sistemabar.sistemabar.service.AdminService;
-import br.com.sistemabar.sistemabar.service.RelatorioService;
+import br.com.sistemabar.sistemabar.dto.*;
+import br.com.sistemabar.sistemabar.model.*;
+import br.com.sistemabar.sistemabar.repository.*;
+import br.com.sistemabar.sistemabar.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +19,24 @@ public class AdminController {
 
     @Autowired private AdminService adminService;
     @Autowired private RelatorioService relatorioService;
-    @Autowired private MesaRepository mesaRepository; // Injeção direta para busca rápida
+    @Autowired private MesaRepository mesaRepository;
 
     // --- CARDÁPIO ---
+
     @GetMapping("/cardapio")
     public ResponseEntity<List<ItemCardapio>> listarItens() {
         return ResponseEntity.ok(adminService.listarItensCardapio());
+    }
+
+    // Busca item pelo NÚMERO visual (para verificar antes de criar/editar)
+    @GetMapping("/cardapio/buscar")
+    public ResponseEntity<?> buscarItemPorNumero(@RequestParam int numero) {
+        ItemCardapio item = adminService.buscarItemPorNumero(numero);
+        if (item != null) {
+            return ResponseEntity.ok(item);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/cardapio")
@@ -43,6 +51,7 @@ public class AdminController {
     @DeleteMapping("/cardapio/{id}")
     public ResponseEntity<?> deletarItem(@PathVariable Long id) {
         try {
+            // O AdminService foi configurado para fazer "Soft Delete" (Inativar)
             adminService.deletarItemCardapio(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -51,12 +60,12 @@ public class AdminController {
     }
 
     // --- MESAS ---
+
     @GetMapping("/mesas")
     public ResponseEntity<List<Mesa>> listarMesas() {
         return ResponseEntity.ok(adminService.listarMesas());
     }
 
-    // Endpoint NOVO para buscar mesa específica pelo número
     @GetMapping("/mesas/buscar")
     public ResponseEntity<?> buscarMesaPorNumero(@RequestParam int numero) {
         Mesa mesa = mesaRepository.findByNumero(numero);
@@ -87,6 +96,7 @@ public class AdminController {
     }
 
     // --- CONFIGURAÇÕES ---
+
     @GetMapping("/configuracoes")
     public ResponseEntity<Configuracao> getConfiguracoes() {
         return ResponseEntity.ok(adminService.getConfiguracoes());
@@ -102,6 +112,7 @@ public class AdminController {
     }
 
     // --- RELATÓRIOS ---
+
     @GetMapping("/relatorio/faturamento")
     public ResponseEntity<Double> getFaturamento(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime inicio,

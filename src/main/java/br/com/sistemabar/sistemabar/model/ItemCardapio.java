@@ -1,76 +1,64 @@
 package br.com.sistemabar.sistemabar.model;
 
 import jakarta.persistence.*;
-@Entity // 1. Diz ao Spring que esta classe é uma tabela no banco
-@Table(name = "item_cardapio") // 2. Define o nome da tabela
+
+@Entity
+@Table(name = "item_cardapio")
 public class ItemCardapio {
 
-    @Id // 3. Marca este campo como a Chave Primária (Primary Key)
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 4. Diz ao MySQL para auto-incrementar o ID
-    private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id; // Uso interno do banco (Relacionamentos)
 
-    @Column(nullable = false) // Garante que o nome não pode ser nulo
+    @Column(nullable = false, unique = true)
+    private int numero; // Uso do Usuário (Código do produto no cardápio)
+
+    @Column(nullable = false)
     private String nome;
 
     @Column(nullable = false)
     private double preco;
 
-    private String categoria; // Ex: "Bebidas", "Comidas", "Sobremesas"
+    private String categoria;
 
-    // (Tipo 2 = Bebida, Tipo 3 = Comida, Outro = Sem gorjeta)
     @Column(nullable = false)
-    private int tipo;
+    private int tipo; // 2=Bebida, 3=Comida
+
+    @Column(nullable = false)
+    private boolean ativo; // true = Disponível, false = "Excluído" (Histórico mantido)
 
     // --- Construtores ---
-
     public ItemCardapio() {
     }
 
-    public ItemCardapio(String nome, double preco, String categoria, int tipo) {
+    public ItemCardapio(int numero, String nome, double preco, String categoria, int tipo) {
+        this.numero = numero;
         this.nome = nome;
         this.preco = preco;
         this.categoria = categoria;
         this.tipo = tipo;
+        this.ativo = true; // Nasce ativo por padrão
     }
 
     // --- Getters e Setters ---
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public int getNumero() { return numero; }
+    public void setNumero(int numero) { this.numero = numero; }
 
-    public String getNome() {
-        return nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public double getPreco() { return preco; }
+    public void setPreco(double preco) { this.preco = preco; }
 
-    public double getPreco() {
-        return preco;
-    }
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
 
-    public void setPreco(double preco) {
-        this.preco = preco;
-    }
+    public int getTipo() { return tipo; }
+    public void setTipo(int tipo) { this.tipo = tipo; }
 
-    public String getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(String categoria) {
-        this.categoria = categoria;
-    }
-
-    public int getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(int tipo) {
-        this.tipo = tipo;
-    }
+    public boolean isAtivo() { return ativo; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
 }

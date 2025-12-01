@@ -2,7 +2,6 @@ protegerPagina('GARCOM');
 setupPanelSwitcher('acao_garcom', 'painel-acao', 'painel-');
 
 const API_GARCOM_URL = "http://localhost:8080/api/garcom";
-let comandaAtivaId = null;
 
 async function abrirMesa(event) {
     event.preventDefault();
@@ -21,10 +20,7 @@ async function abrirMesa(event) {
             throw new Error(erro);
         }
 
-        const comanda = await response.json();
-        comandaAtivaId = comanda.id;
-        alert(`Mesa ${numeroMesa} aberta! Comanda ID: ${comanda.id}`);
-        console.log("Comanda:", comanda);
+        alert(`Mesa ${numeroMesa} aberta!`);
     } catch (error) {
         alert("Erro: " + error.message);
     }
@@ -32,32 +28,32 @@ async function abrirMesa(event) {
 
 async function adicionarItem(event) {
     event.preventDefault();
+    const mesa = document.getElementById('add-item-mesa').value;
+    const item = document.getElementById('add-item-codigo').value;
+    const qtd = document.getElementById('add-item-qtd').value;
 
-    let idParaUsar = document.getElementById('add-item-mesa').value;
-    if (!idParaUsar) idParaUsar = comandaAtivaId;
-
-    if (!idParaUsar) {
-        alert("Digite o ID da Comanda ou abra uma mesa antes.");
+    if (!mesa || !item || !qtd) {
+        alert("Preencha todos os campos.");
         return;
     }
-
-    const itemId = document.getElementById('add-item-codigo').value;
-    const quantidade = document.getElementById('add-item-qtd').value;
 
     try {
         const response = await fetch(`${API_GARCOM_URL}/add-pedido`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                comandaId: parseInt(idParaUsar),
-                itemId: parseInt(itemId),
-                quantidade: parseInt(quantidade)
+                numeroMesa: parseInt(mesa),
+                numeroItem: parseInt(item),
+                quantidade: parseInt(qtd)
             })
         });
 
         if (!response.ok) throw new Error(await response.text());
 
-        alert(`Item adicionado com sucesso!`);
+        alert(`Item adicionado na Mesa ${mesa}!`);
+        // Limpa campos do item e qtd para facilitar o próximo
+        document.getElementById('add-item-codigo').value = "";
+        document.getElementById('add-item-qtd').value = "";
     } catch (error) {
         alert("Erro: " + error.message);
     }
@@ -65,19 +61,38 @@ async function adicionarItem(event) {
 
 async function registrarPgto(event) {
     event.preventDefault();
-    const comandaId = document.getElementById('pgto-mesa-numero').value;
+    const mesa = document.getElementById('pgto-mesa-numero').value;
     const valor = document.getElementById('pgto-valor').value;
 
     try {
         const response = await fetch(`${API_GARCOM_URL}/pagar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comandaId: parseInt(comandaId), valor: parseFloat(valor) })
+            body: JSON.stringify({ numeroMesa: parseInt(mesa), valor: parseFloat(valor) })
         });
 
        if (!response.ok) throw new Error(await response.text());
 
-        alert(`Pagamento registrado!`);
+        alert(`Pagamento registrado na Mesa ${mesa}!`);
+    } catch (error) {
+        alert("Erro: " + error.message);
+    }
+}
+
+async function fecharConta(event) {
+    event.preventDefault();
+    const mesa = document.getElementById('fechar-mesa-numero').value;
+
+    try {
+        const response = await fetch(`${API_GARCOM_URL}/fechar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numeroMesa: parseInt(mesa) })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+
+        alert(`Conta da Mesa ${mesa} fechada com sucesso!`);
     } catch (error) {
         alert("Erro: " + error.message);
     }
@@ -97,17 +112,11 @@ async function removerItem(event) {
 
         if (!response.ok) {
             const errorMsg = await response.text();
-            throw new Error('Falha ao cancelar pedido: ' + errorMsg);
+            throw new Error(errorMsg);
         }
 
-        const pedido = await response.json();
-        alert(`Pedido ${pedido.id} cancelado.`);
+        alert(`Pedido cancelado.`);
     } catch (error) {
-        console.error(error);
         alert(error.message);
     }
 }
-
-function adicionarPessoa(event) { event.preventDefault(); alert("Use 'Abrir Mesa' para definir pessoas."); }
-function alternarCouvert(event) { event.preventDefault(); alert("Funcionalidade futura."); }
-function fecharConta(event) { event.preventDefault(); alert("Funcionalidade futura. Use o pagamento para abater o valor."); }

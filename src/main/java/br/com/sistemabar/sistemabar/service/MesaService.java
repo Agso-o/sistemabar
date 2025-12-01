@@ -49,30 +49,37 @@ public class MesaService {
         return comandaRepository.save(novaComanda);
     }
 
+    // --- MUDANÇA: Recebe numeros (int) ao invés de IDs (Long) ---
     @Transactional
-    public Pedido adicionarPedido(Long comandaId, Long itemId, int quantidade) {
+    public Pedido adicionarPedido(int numeroMesa, int numeroItem, int quantidade) {
         if (quantidade <= 0) {
             throw new RuntimeException("A quantidade deve ser maior que zero.");
         }
 
-        Comanda comanda = comandaRepository.findById(comandaId)
-                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
-
-        if (comanda.getStatus() != StatusComanda.ABERTA) {
-            throw new RuntimeException("Não é possível adicionar pedido. A comanda já está fechada.");
+        // 1. Busca a Mesa pelo número
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) {
+            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
         }
 
-        ItemCardapio item = itemCardapioRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item do cardápio não encontrado: " + itemId));
+        // 2. Busca a Comanda ABERTA desta mesa
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Não há comanda aberta para a Mesa " + numeroMesa));
+
+        // 3. Busca o Item pelo NÚMERO visual do cardápio
+        ItemCardapio item = itemCardapioRepository.findByNumero(numeroItem)
+                .orElseThrow(() -> new RuntimeException("Item código " + numeroItem + " não encontrado."));
+
+        // 4. Verifica se o item está ativo
+        if (!item.isAtivo()) {
+            throw new RuntimeException("Este item (" + item.getNome() + ") está inativo.");
+        }
 
         Pedido novoPedido = new Pedido(comanda, item, quantidade);
         return pedidoRepository.save(novoPedido);
     }
 
-    public double calcularTotalRestanteComanda(Long comandaId) {
-        Comanda comanda = comandaRepository.findById(comandaId)
-                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
-
+    public double calcularTotalRestante(Comanda comanda) {
         Configuracao config = configuracaoRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("Configurações do sistema não encontradas"));
 
@@ -108,6 +115,13 @@ public class MesaService {
         return Math.round(totalRestante * 100.0) / 100.0;
     }
 
+    // Mantido para compatibilidade interna se necessário, mas o GarcomController não usa mais este diretamente
+    public double calcularTotalRestanteComanda(Long comandaId) {
+        Comanda comanda = comandaRepository.findById(comandaId)
+                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
+        return calcularTotalRestante(comanda);
+    }
+
     @Transactional
     public Pedido cancelarPedido(Long pedidoId, String motivo) {
         if (motivo == null || motivo.isBlank()) {
@@ -131,20 +145,22 @@ public class MesaService {
         return pedidoRepository.save(pedido);
     }
 
+    // --- CORRIGIDO: Agora aceita int (numero da mesa) ---
     @Transactional
-    public Pagamento registrarPagamento(Long comandaId, double valor) {
+    public Pagamento registrarPagamento(int numeroMesa, double valor) {
         if (valor <= 0) {
             throw new RuntimeException("O valor do pagamento deve ser maior que zero.");
         }
 
-        Comanda comanda = comandaRepository.findById(comandaId)
-                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
-
-        if (comanda.getStatus() != StatusComanda.ABERTA) {
-            throw new RuntimeException("Esta comanda já foi fechada.");
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) {
+            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
         }
 
-        double totalRestante = calcularTotalRestanteComanda(comandaId);
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+
+        double totalRestante = calcularTotalRestante(comanda);
 
         if (valor > (totalRestante + 0.01)) {
             throw new RuntimeException("Pagamento maior que o valor restante. Restam: R$ " + totalRestante);
@@ -154,16 +170,18 @@ public class MesaService {
         return pagamentoRepository.save(novoPagamento);
     }
 
+    // --- CORRIGIDO: Agora aceita int (numero da mesa) ---
     @Transactional
-    public Comanda fecharComanda(Long comandaId) {
-        Comanda comanda = comandaRepository.findById(comandaId)
-                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
-
-        if (comanda.getStatus() == StatusComanda.FECHADA) {
-            throw new RuntimeException("Esta comanda já foi fechada.");
+    public Comanda fecharComanda(int numeroMesa) {
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) {
+            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
         }
 
-        double totalRestante = calcularTotalRestanteComanda(comandaId);
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+
+        double totalRestante = calcularTotalRestante(comanda);
 
         if (totalRestante > 0.01) {
             throw new RuntimeException("A conta não pode ser fechada. Saldo devedor: R$ " + totalRestante);
@@ -172,8 +190,7 @@ public class MesaService {
         comanda.setStatus(StatusComanda.FECHADA);
         comandaRepository.save(comanda);
 
-        // Libera a mesa (Volta para o status FECHADA)
-        Mesa mesa = comanda.getMesa();
+        // Libera a mesa
         mesa.setStatus(StatusMesa.FECHADA);
         mesaRepository.save(mesa);
 

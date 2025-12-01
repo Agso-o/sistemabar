@@ -36,59 +36,57 @@
             <form class="box" onsubmit="abrirMesa(event)">
                 <h3 class="texto">Abrir Mesa</h3>
                 <input type="number" id="abrir-mesa-numero" placeholder="Número da Mesa">
-                <input type="number" id="abrir-mesa-pessoas" placeholder="Qtd. de Pessoas (ex: 2)">
+                <input type="number" id="abrir-mesa-pessoas" placeholder="Qtd. de Pessoas">
                 <button type="submit">Confirmar Abertura</button>
             </form>
         </div>
+
         <div id="painel-2" class="painel-acao">
-            <form class="box" onsubmit="adicionarPessoa(event)">
-                <h3 class="texto">Adicionar Pessoa</h3>
-                <p class="texto-info">Funcionalidade a implementar no back-end.</p>
-            </form>
+            <h3 class="texto">Adicionar Pessoa</h3>
+            <p class="texto-info">Em breve...</p>
         </div>
+
         <div id="painel-3" class="painel-acao">
             <form class="box" onsubmit="adicionarItem(event)">
                 <h3 class="texto">Adicionar Itens</h3>
-                <input type="number" id="add-item-mesa" placeholder="Número da Mesa / Comanda">
-                <input type="number" id="add-item-codigo" placeholder="ID do Item">
+                <input type="number" id="add-item-mesa" placeholder="Número da Mesa">
+                <input type="number" id="add-item-codigo" placeholder="Código do Item (Cardápio)">
                 <input type="number" id="add-item-qtd" placeholder="Quantidade">
                 <button type="submit">Adicionar Item</button>
             </form>
         </div>
+
         <div id="painel-4" class="painel-acao">
             <form class="box" onsubmit="removerItem(event)">
                 <h3 class="texto">Cancelar Item</h3>
-                <input type="number" id="remover-item-codigo" placeholder="ID do Pedido">
+                <input type="number" id="remover-item-codigo" placeholder="ID do Pedido (Ver na comanda)">
                 <input type="text" id="remover-item-motivo" placeholder="Motivo do cancelamento">
                 <button type="submit">Cancelar Item</button>
             </form>
         </div>
+
         <div id="painel-5" class="painel-acao">
-            <form class="box" onsubmit="alternarCouvert(event)">
-                <h3 class="texto">Habilitar/Dispensar Couvert</h3>
-                <p class="texto-info">Funcionalidade a implementar no back-end.</p>
-            </form>
+            <h3 class="texto">Habilitar/Dispensar Couvert</h3>
+            <p class="texto-info">Em breve...</p>
         </div>
+
         <div id="painel-6" class="painel-acao">
             <form class="box" onsubmit="fecharConta(event)">
                 <h3 class="texto">Fechar Conta</h3>
-                <input type="number" id="fechar-mesa-numero" placeholder="ID da Comanda">
+                <input type="number" id="fechar-mesa-numero" placeholder="Número da Mesa">
                 <button type="submit">Fechar Conta</button>
             </form>
         </div>
+
         <div id="painel-7" class="painel-acao">
             <form class="box" onsubmit="registrarPgto(event)">
                 <h3 class="texto">Registrar Pagamento</h3>
-                <input type="number" id="pgto-mesa-numero" placeholder="ID da Comanda">
-                <input type="number" id="pgto-valor" placeholder="Valor pago (R$)">
+                <input type="number" id="pgto-mesa-numero" placeholder="Número da Mesa">
+                <input type="number" id="pgto-valor" placeholder="Valor pago (R$)" step="0.01">
                 <button type="submit">Registrar Pagamento</button>
             </form>
         </div>
     </div>
 </div>
-
-<footer>
-    <p class="texto" style="font-size: 12px; margin-top: 50px;">Sistema Bar v1.0</p>
-</footer>
 </body>
 </html>

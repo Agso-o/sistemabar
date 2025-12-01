@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/garcom")
 @CrossOrigin(origins = "*")
-// @PreAuthorize("hasRole('GARCOM')") // Ative isso quando o Spring Security estiver 100%
 public class GarcomController {
 
     @Autowired
@@ -20,7 +19,6 @@ public class GarcomController {
         try {
             return ResponseEntity.ok(mesaService.abrirMesa(request.getNumeroMesa(), request.getPessoas()));
         } catch (Exception e) {
-            // Retorna a mensagem de erro do Service (ex: "Mesa já está ocupada")
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -28,7 +26,8 @@ public class GarcomController {
     @PostMapping("/add-pedido")
     public ResponseEntity<?> adicionarPedido(@RequestBody AdicionarPedidoRequest request) {
         try {
-            return ResponseEntity.ok(mesaService.adicionarPedido(request.getComandaId(), request.getItemId(), request.getQuantidade()));
+            // Agora usa: Numero Mesa, Numero Item, Quantidade
+            return ResponseEntity.ok(mesaService.adicionarPedido(request.getNumeroMesa(), request.getNumeroItem(), request.getQuantidade()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -46,7 +45,18 @@ public class GarcomController {
     @PostMapping("/pagar")
     public ResponseEntity<?> registrarPagamento(@RequestBody RegistrarPagamentoRequest request) {
         try {
-            return ResponseEntity.ok(mesaService.registrarPagamento(request.getComandaId(), request.getValor()));
+            // Pagar usando o Número da Mesa
+            return ResponseEntity.ok(mesaService.registrarPagamento(request.getNumeroMesa(), request.getValor()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/fechar")
+    public ResponseEntity<?> fecharConta(@RequestBody FecharContaRequest request) {
+        try {
+            // Fechar usando o Número da Mesa
+            return ResponseEntity.ok(mesaService.fecharComanda(request.getNumeroMesa()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
