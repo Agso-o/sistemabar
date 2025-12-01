@@ -44,6 +44,7 @@
         <div id="painel-2" class="painel-acao">
             <form class="box" onsubmit="adicionarPessoa(event)">
                 <h3 class="texto">Adicionar Pessoa</h3>
+                <p class="texto-info">Soma à quantidade atual.</p>
                 <input type="number" id="add-pessoa-mesa" placeholder="Número da Mesa">
                 <input type="number" id="add-pessoa-qtd" placeholder="Quantas pessoas chegaram?">
                 <button type="submit">Adicionar Pessoas</button>
@@ -70,8 +71,18 @@
         </div>
 
         <div id="painel-5" class="painel-acao">
-            <h3 class="texto">Habilitar/Dispensar Couvert</h3>
-            <p class="texto-info">Em breve...</p>
+            <div class="box">
+                <h3 class="texto">Habilitar/Dispensar Couvert</h3>
+                <input type="number" id="couvert-mesa-numero" placeholder="Número da Mesa">
+
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="alternarCouvert(true)" style="background-color: #28a745;">✅ Aplicar</button>
+                    <button onclick="alternarCouvert(false)" style="background-color: #dc3545;">❌ Dispensar</button>
+                </div>
+                <p class="texto-info" style="font-size: 12px; margin-top: 10px;">
+                    (Calculado: R$ por Pessoa x Qtd. Pessoas)
+                </p>
+            </div>
         </div>
 
         <div id="painel-6" class="painel-acao">
@@ -86,6 +97,7 @@
 
             <form class="box" id="form-consulta-pgto" onsubmit="verificarSaldo(event)">
                 <h3 class="texto">Registrar Pagamento</h3>
+                <label class="texto">Passo 1: Identificar Mesa</label>
                 <input type="number" id="pgto-mesa-numero" placeholder="Número da Mesa">
                 <button type="submit">Verificar Conta</button>
             </form>
@@ -110,6 +122,7 @@
                 </div>
 
                 <form class="box" onsubmit="realizarPagamento(event)" style="margin-top: 15px;">
+                    <label class="texto">Passo 2: Registrar Valor</label>
                     <input type="number" id="pgto-valor-input" placeholder="Valor a Pagar (R$)" step="0.01">
                     <button type="submit" style="background-color: #28a745;">Confirmar Pagamento</button>
                     <button type="button" onclick="cancelarPgto()" style="background-color: #555; width: 100px; font-size: 12px;">Voltar</button>

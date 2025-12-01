@@ -27,7 +27,7 @@ async function abrirMesa(event) {
     }
 }
 
-// --- NOVO: ADICIONAR PESSOA ---
+// --- ADICIONAR PESSOA ---
 async function adicionarPessoa(event) {
     event.preventDefault();
     const mesa = document.getElementById('add-pessoa-mesa').value;
@@ -42,11 +42,10 @@ async function adicionarPessoa(event) {
 
         if (!response.ok) throw new Error(await response.text());
 
-        // Recebemos a comanda atualizada
         const comanda = await response.json();
         alert(`Sucesso! Agora a Mesa ${mesa} tem ${comanda.pessoas} pessoas.`);
 
-        document.getElementById('add-pessoa-qtd').value = ""; // Limpa campo
+        document.getElementById('add-pessoa-qtd').value = "";
     } catch (error) {
         alert("Erro: " + error.message);
     }
@@ -80,6 +79,29 @@ async function adicionarItem(event) {
         alert(`Item adicionado na Mesa ${mesa}!`);
         document.getElementById('add-item-codigo').value = "";
         document.getElementById('add-item-qtd').value = "";
+    } catch (error) {
+        alert("Erro: " + error.message);
+    }
+}
+
+// --- COUVERT (NOVO) ---
+async function alternarCouvert(cobrar) {
+    const mesa = document.getElementById('couvert-mesa-numero').value;
+    if(!mesa) { alert("Digite o número da mesa."); return; }
+
+    try {
+        const response = await fetch(`${API_GARCOM_URL}/couvert`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numeroMesa: parseInt(mesa), cobrar: cobrar })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+
+        const comanda = await response.json();
+        const status = cobrar ? "APLICADO" : "REMOVIDO";
+        alert(`Couvert ${status} para Mesa ${mesa}!\nValor Total: R$ ${comanda.valorCouvertAplicado.toFixed(2)}`);
+
     } catch (error) {
         alert("Erro: " + error.message);
     }

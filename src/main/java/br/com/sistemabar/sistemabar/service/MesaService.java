@@ -47,7 +47,6 @@ public class MesaService {
         return comandaRepository.save(novaComanda);
     }
 
-    // --- NOVO MÉTODO: ADICIONAR PESSOAS ---
     @Transactional
     public Comanda adicionarPessoasMesa(int numeroMesa, int quantidadeMais) {
         if (quantidadeMais <= 0) throw new RuntimeException("Quantidade inválida.");
@@ -58,8 +57,35 @@ public class MesaService {
         Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
                 .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
 
-        // Soma as pessoas
         comanda.setPessoas(comanda.getPessoas() + quantidadeMais);
+        // Opcional: Se já tiver couvert aplicado, poderia recalcular aqui automaticamente
+        // mas vamos deixar manual para o garçom decidir.
+
+        return comandaRepository.save(comanda);
+    }
+
+    // --- NOVO MÉTODO: ATUALIZAR COUVERT ---
+    @Transactional
+    public Comanda atualizarCouvertMesa(int numeroMesa, boolean cobrar) {
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada.");
+
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+
+        if (cobrar) {
+            // Busca o valor configurado no Admin
+            Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
+            double valorPorPessoa = config.getValorCouvertPessoa();
+
+            // Calcula o total
+            double totalCouvert = valorPorPessoa * comanda.getPessoas();
+            comanda.setValorCouvertAplicado(totalCouvert);
+        } else {
+            // Remove o couvert
+            comanda.setValorCouvertAplicado(0.0);
+        }
+
         return comandaRepository.save(comanda);
     }
 

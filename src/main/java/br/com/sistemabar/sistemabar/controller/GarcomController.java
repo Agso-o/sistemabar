@@ -23,7 +23,6 @@ public class GarcomController {
         }
     }
 
-    // NOVO ENDPOINT: Adicionar Pessoa
     @PostMapping("/add-pessoa")
     public ResponseEntity<?> adicionarPessoa(@RequestBody AdicionarPessoaRequest request) {
         try {
@@ -46,6 +45,16 @@ public class GarcomController {
     public ResponseEntity<?> cancelarPedido(@RequestBody CancelarPedidoRequest request) {
         try {
             return ResponseEntity.ok(mesaService.cancelarPedido(request.getPedidoId(), request.getMotivo()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // NOVO ENDPOINT DE COUVERT
+    @PostMapping("/couvert")
+    public ResponseEntity<?> definirCouvert(@RequestBody DefinirCouvertRequest request) {
+        try {
+            return ResponseEntity.ok(mesaService.atualizarCouvertMesa(request.getNumeroMesa(), request.isCobrar()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
