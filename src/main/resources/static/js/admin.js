@@ -202,14 +202,13 @@ async function deletarItem() {
     } catch(err) { alert(err.message); }
 }
 
-// --- RELATÓRIOS (ATUALIZADO E COMPLETO) ---
+// --- RELATÓRIOS (AGORA COM DATAS EM TODOS OS FETCHES) ---
 async function gerarRelatorio(event) {
     event.preventDefault();
     const inicio = document.getElementById('relatorio-inicio').value + "T00:00:00";
     const fim = document.getElementById('relatorio-fim').value + "T23:59:59";
 
-    // Limpa campos anteriores
-    document.getElementById('rel-faturamento').innerText = "...";
+    document.getElementById('rel-faturamento').innerText = "Carregando...";
     document.getElementById('rel-mais-vendido').innerText = "...";
     document.getElementById('rel-maior-faturamento').innerText = "...";
     mostrarSubPainel('relatorio-resultado', true);
@@ -218,34 +217,32 @@ async function gerarRelatorio(event) {
         // 1. FATURAMENTO
         const resFat = await fetch(`${API_ADMIN_URL}/relatorio/faturamento?inicio=${inicio}&fim=${fim}`);
         if(resFat.ok) {
-            const val = await resFat.json();
-            // Se vier nulo (nenhuma venda), mostra 0.00
-            document.getElementById('rel-faturamento').innerText = (val || 0).toFixed(2);
+            const text = await resFat.text();
+            const val = text ? JSON.parse(text) : 0.0;
+            document.getElementById('rel-faturamento').innerText = val.toFixed(2);
         }
 
-        // 2. MAIS VENDIDOS
-        const resQtd = await fetch(`${API_ADMIN_URL}/relatorio/mais-vendidos`);
+        // 2. MAIS VENDIDOS (AGORA USA DATA)
+        const resQtd = await fetch(`${API_ADMIN_URL}/relatorio/mais-vendidos?inicio=${inicio}&fim=${fim}`);
         if(resQtd.ok) {
             const lista = await resQtd.json();
-            if(lista.length > 0) {
-                // Pega o primeiro da lista (Top 1)
+            if(lista && lista.length > 0) {
                 const top1 = lista[0];
                 document.getElementById('rel-mais-vendido').innerText = `${top1.nomeItem} (${top1.totalVendido} un)`;
             } else {
-                document.getElementById('rel-mais-vendido').innerText = "Nenhum";
+                document.getElementById('rel-mais-vendido').innerText = "Nenhum registro";
             }
         }
 
-        // 3. MAIOR FATURAMENTO (ITEM)
-        const resLucro = await fetch(`${API_ADMIN_URL}/relatorio/maior-faturamento`);
+        // 3. MAIOR FATURAMENTO (AGORA USA DATA)
+        const resLucro = await fetch(`${API_ADMIN_URL}/relatorio/maior-faturamento?inicio=${inicio}&fim=${fim}`);
         if(resLucro.ok) {
             const lista = await resLucro.json();
-            if(lista.length > 0) {
-                // Pega o primeiro da lista (Top 1)
+            if(lista && lista.length > 0) {
                 const top1 = lista[0];
                 document.getElementById('rel-maior-faturamento').innerText = `${top1.nomeItem} (R$ ${top1.faturamentoTotal.toFixed(2)})`;
             } else {
-                document.getElementById('rel-maior-faturamento').innerText = "Nenhum";
+                document.getElementById('rel-maior-faturamento').innerText = "Nenhum registro";
             }
         }
 

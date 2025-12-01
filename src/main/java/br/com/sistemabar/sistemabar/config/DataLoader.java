@@ -18,7 +18,6 @@ public class DataLoader {
                                    ConfiguracaoRepository configuracaoRepository,
                                    PasswordEncoder passwordEncoder) {
         return args -> {
-            // 1. Criar Usuários Padrão
             if (usuarioRepository.findByLogin("admin").isEmpty()) {
                 Usuario admin = new Usuario("admin", passwordEncoder.encode("admin"), PerfilUsuario.ADMIN);
                 usuarioRepository.save(admin);
@@ -35,8 +34,8 @@ public class DataLoader {
             if (configuracaoRepository.findById(1L).isEmpty()) {
                 Configuracao config = new Configuracao();
                 config.setId(1L);
-                config.setValorCouvertPessoa(0.0); // Padrão sem couvert
-                config.setPercentualGorjetaBebida(0.0); // Padrão sem gorjeta
+                config.setValorCouvertPessoa(0.0);
+                config.setPercentualGorjetaBebida(0.0);
                 config.setPercentualGorjetaComida(0.0);
                 configuracaoRepository.save(config);
                 System.out.println(">>> Configurações iniciais criadas (ID 1).");

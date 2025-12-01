@@ -27,20 +27,21 @@ public class RelatorioService {
      * Calcula o faturamento total (soma de pagamentos) em um período.
      */
     public Double getFaturamentoPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
-        return pagamentoRepository.sumValorByDataPagamentoBetween(inicio, fim);
+        Double total = pagamentoRepository.sumValorByDataPagamentoBetween(inicio, fim);
+        return total != null ? total : 0.0;
     }
 
     /**
-     * Busca os itens mais vendidos, ordenados.
+     * Busca os itens mais vendidos no período.
      */
-    public List<ItemMaisVendidoDTO> getItensMaisVendidos() {
-        return pedidoRepository.findItensMaisVendidos();
+    public List<ItemMaisVendidoDTO> getItensMaisVendidos(LocalDateTime inicio, LocalDateTime fim) {
+        return pedidoRepository.findItensMaisVendidos(inicio, fim);
     }
 
     /**
-     * Busca os itens que geraram maior faturamento, ordenados.
+     * Busca os itens de maior faturamento no período.
      */
-    public List<ItemMaiorFaturamentoDTO> getItensMaiorFaturamento() {
-        return pedidoRepository.findItensMaiorFaturamento();
+    public List<ItemMaiorFaturamentoDTO> getItensMaiorFaturamento(LocalDateTime inicio, LocalDateTime fim) {
+        return pedidoRepository.findItensMaiorFaturamento(inicio, fim);
     }
 }
