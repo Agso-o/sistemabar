@@ -27,6 +27,31 @@ async function abrirMesa(event) {
     }
 }
 
+// --- NOVO: ADICIONAR PESSOA ---
+async function adicionarPessoa(event) {
+    event.preventDefault();
+    const mesa = document.getElementById('add-pessoa-mesa').value;
+    const qtd = document.getElementById('add-pessoa-qtd').value;
+
+    try {
+        const response = await fetch(`${API_GARCOM_URL}/add-pessoa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numeroMesa: parseInt(mesa), quantidade: parseInt(qtd) })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+
+        // Recebemos a comanda atualizada
+        const comanda = await response.json();
+        alert(`Sucesso! Agora a Mesa ${mesa} tem ${comanda.pessoas} pessoas.`);
+
+        document.getElementById('add-pessoa-qtd').value = ""; // Limpa campo
+    } catch (error) {
+        alert("Erro: " + error.message);
+    }
+}
+
 // --- ADICIONAR ITEM ---
 async function adicionarItem(event) {
     event.preventDefault();
@@ -70,32 +95,24 @@ async function verificarSaldo(event) {
 
     try {
         await buscarDadosSaldo(mesa);
-
-        // Troca os painéis
         document.getElementById('form-consulta-pgto').style.display = 'none';
         document.getElementById('pgto-area-pagar').style.display = 'flex';
-
     } catch (error) {
         console.error(error);
         alert("Erro ao verificar: " + error.message);
     }
 }
 
-// --- PAGAMENTO: BOTÃO MANUAL DE ATUALIZAR ---
 async function atualizarValoresPgto() {
-    // Pega a mesa do campo que ficou oculto (mas ainda tem o valor)
     const mesa = document.getElementById('pgto-mesa-numero').value;
     if (!mesa) return;
-
     try {
         await buscarDadosSaldo(mesa);
-        // Pequeno feedback visual (piscar botão ou algo do tipo opcional)
     } catch (error) {
         alert("Erro ao atualizar: " + error.message);
     }
 }
 
-// --- FUNÇÃO REUTILIZÁVEL PARA BUSCAR DADOS ---
 async function buscarDadosSaldo(mesa) {
     const timestamp = new Date().getTime();
     const response = await fetch(`${API_GARCOM_URL}/saldo?mesa=${mesa}&_=${timestamp}`, {
@@ -134,7 +151,7 @@ async function realizarPagamento(event) {
         alert("Pagamento registrado!");
 
         atualizarPainelPagamento(info);
-        document.getElementById('pgto-valor-input').value = ""; // Limpa campo
+        document.getElementById('pgto-valor-input').value = "";
 
         if(info.saldoRestante <= 0.01) {
             alert("Conta quitada! Você pode fechar a mesa agora.");

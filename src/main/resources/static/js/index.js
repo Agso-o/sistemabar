@@ -33,12 +33,14 @@ function verificarUsuario() {
     if (perfil === 'ADMIN') {
         painelAdmin.style.display = 'flex';
         painelGarcom.style.display = 'none';
+        // Admin VÊ o botão QR
         if (btnQr) btnQr.style.display = 'block';
 
     } else if (perfil === 'GARCOM') {
         painelGarcom.style.display = 'flex';
         painelAdmin.style.display = 'none';
-        if (btnQr) btnQr.style.display = 'block';
+        // Garçom NÃO VÊ o botão QR
+        if (btnQr) btnQr.style.display = 'none';
     }
 }
 

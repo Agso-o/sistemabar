@@ -47,6 +47,22 @@ public class MesaService {
         return comandaRepository.save(novaComanda);
     }
 
+    // --- NOVO MÉTODO: ADICIONAR PESSOAS ---
+    @Transactional
+    public Comanda adicionarPessoasMesa(int numeroMesa, int quantidadeMais) {
+        if (quantidadeMais <= 0) throw new RuntimeException("Quantidade inválida.");
+
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada.");
+
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+
+        // Soma as pessoas
+        comanda.setPessoas(comanda.getPessoas() + quantidadeMais);
+        return comandaRepository.save(comanda);
+    }
+
     @Transactional
     public Pedido adicionarPedido(int numeroMesa, int numeroItem, int quantidade) {
         if (quantidade <= 0) throw new RuntimeException("A quantidade deve ser maior que zero.");
@@ -100,7 +116,6 @@ public class MesaService {
         pedido.setMotivoCancelamento(motivo);
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        // Estorno Automático
         Comanda comanda = pedido.getComanda();
         double[] valores = calcularValoresComanda(comanda);
         double saldoRestante = valores[2];
@@ -112,8 +127,6 @@ public class MesaService {
 
         return pedidoSalvo;
     }
-
-    // --- MÉTODOS FINANCEIROS ---
 
     private PagamentoResponseDTO montarResumoFinanceiro(Comanda comanda, double valorPagoAgora) {
         Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
@@ -130,10 +143,9 @@ public class MesaService {
 
         double totalBruto = subtotal + gorjetaBebida + gorjetaComida + comanda.getValorCouvertAplicado();
 
-        // ALTERAÇÃO: Busca pagamentos ordenados pelo ID (ordem de criação)
         List<Pagamento> pagamentos = pagamentoRepository.findByComandaOrderByIdAsc(comanda);
-
         double totalJaPago = pagamentos.stream().mapToDouble(Pagamento::getValor).sum();
+
         double saldoRestante = Math.round((totalBruto - totalJaPago) * 100.0) / 100.0;
 
         List<Double> historico = pagamentos.stream().map(Pagamento::getValor).collect(Collectors.toList());

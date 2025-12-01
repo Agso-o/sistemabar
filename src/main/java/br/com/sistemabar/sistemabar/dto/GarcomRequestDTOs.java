@@ -12,6 +12,17 @@ public class GarcomRequestDTOs {
         public void setPessoas(int pessoas) { this.pessoas = pessoas; }
     }
 
+    // NOVO DTO
+    public static class AdicionarPessoaRequest {
+        private int numeroMesa;
+        private int quantidade; // Quantas pessoas a MAIS
+
+        public int getNumeroMesa() { return numeroMesa; }
+        public void setNumeroMesa(int numeroMesa) { this.numeroMesa = numeroMesa; }
+        public int getQuantidade() { return quantidade; }
+        public void setQuantidade(int quantidade) { this.quantidade = quantidade; }
+    }
+
     public static class AdicionarPedidoRequest {
         private int numeroMesa;
         private int numeroItem;
@@ -36,7 +47,7 @@ public class GarcomRequestDTOs {
     }
 
     public static class RegistrarPagamentoRequest {
-        private int numeroMesa; // Usamos número da mesa agora
+        private int numeroMesa;
         private double valor;
 
         public int getNumeroMesa() { return numeroMesa; }
@@ -45,10 +56,8 @@ public class GarcomRequestDTOs {
         public void setValor(double valor) { this.valor = valor; }
     }
 
-    // Esta classe estava faltando e causava erro no GarcomController
     public static class FecharContaRequest {
         private int numeroMesa;
-
         public int getNumeroMesa() { return numeroMesa; }
         public void setNumeroMesa(int numeroMesa) { this.numeroMesa = numeroMesa; }
     }

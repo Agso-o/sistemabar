@@ -23,6 +23,16 @@ public class GarcomController {
         }
     }
 
+    // NOVO ENDPOINT: Adicionar Pessoa
+    @PostMapping("/add-pessoa")
+    public ResponseEntity<?> adicionarPessoa(@RequestBody AdicionarPessoaRequest request) {
+        try {
+            return ResponseEntity.ok(mesaService.adicionarPessoasMesa(request.getNumeroMesa(), request.getQuantidade()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/add-pedido")
     public ResponseEntity<?> adicionarPedido(@RequestBody AdicionarPedidoRequest request) {
         try {
@@ -41,7 +51,6 @@ public class GarcomController {
         }
     }
 
-    // NOVO: Consultar Saldo (Etapa 1 do Pagamento)
     @GetMapping("/saldo")
     public ResponseEntity<?> consultarSaldo(@RequestParam int mesa) {
         try {
