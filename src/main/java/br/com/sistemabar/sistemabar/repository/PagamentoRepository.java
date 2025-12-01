@@ -13,10 +13,12 @@ import java.util.List;
 @Repository
 public interface PagamentoRepository extends JpaRepository<Pagamento, Long> {
 
+    // ALTERAÇÃO: Adicionado 'OrderByIdAsc' para garantir a ordem cronológica
+    List<Pagamento> findByComandaOrderByIdAsc(Comanda comanda);
+
+    // Mantido para compatibilidade, caso algum método antigo use
     List<Pagamento> findByComanda(Comanda comanda);
 
-    // --- ADICIONADO (NECESSÁRIO PARA RelatorioService) ---
-    @Query("SELECT SUM(p.valor) FROM Pagamento p " +
-            "WHERE p.dataPagamento BETWEEN :inicio AND :fim")
+    @Query("SELECT SUM(p.valor) FROM Pagamento p WHERE p.dataPagamento BETWEEN :inicio AND :fim")
     Double sumValorByDataPagamentoBetween(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
 }

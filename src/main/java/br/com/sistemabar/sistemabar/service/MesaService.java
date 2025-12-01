@@ -47,7 +47,6 @@ public class MesaService {
         return comandaRepository.save(novaComanda);
     }
 
-    // --- ADICIONAR PEDIDO (COM AUTO-RECUPERAÇÃO DE COMANDA) ---
     @Transactional
     public Pedido adicionarPedido(int numeroMesa, int numeroItem, int quantidade) {
         if (quantidade <= 0) throw new RuntimeException("A quantidade deve ser maior que zero.");
@@ -55,16 +54,13 @@ public class MesaService {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
         if (mesa == null) throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
 
-        // Se a mesa estiver FECHADA, não deixa adicionar.
         if (mesa.getStatus() == StatusMesa.FECHADA) {
             throw new RuntimeException("A Mesa " + numeroMesa + " está FECHADA. Abra a mesa antes de adicionar itens.");
         }
 
-        // Tenta achar a comanda aberta
         Optional<Comanda> comandaOpt = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA);
         Comanda comanda;
 
-        // Se a mesa está ABERTA mas não tem comanda (bug ou erro anterior), cria uma nova
         if (comandaOpt.isEmpty()) {
             comanda = new Comanda(mesa, 1);
             comanda = comandaRepository.save(comanda);
@@ -83,7 +79,6 @@ public class MesaService {
         return pedidoRepository.save(novoPedido);
     }
 
-    // --- CANCELAR PEDIDO (REINSERIDO) ---
     @Transactional
     public Pedido cancelarPedido(Long pedidoId, String motivo) {
         if (motivo == null || motivo.isBlank()) {
@@ -103,8 +98,19 @@ public class MesaService {
 
         pedido.setStatus(StatusPedido.CANCELADO);
         pedido.setMotivoCancelamento(motivo);
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        return pedidoRepository.save(pedido);
+        // Estorno Automático
+        Comanda comanda = pedido.getComanda();
+        double[] valores = calcularValoresComanda(comanda);
+        double saldoRestante = valores[2];
+
+        if (saldoRestante < -0.001) {
+            Pagamento estorno = new Pagamento(comanda, saldoRestante);
+            pagamentoRepository.save(estorno);
+        }
+
+        return pedidoSalvo;
     }
 
     // --- MÉTODOS FINANCEIROS ---
@@ -124,14 +130,20 @@ public class MesaService {
 
         double totalBruto = subtotal + gorjetaBebida + gorjetaComida + comanda.getValorCouvertAplicado();
 
-        List<Pagamento> pagamentos = pagamentoRepository.findByComanda(comanda);
-        double totalJaPago = pagamentos.stream().mapToDouble(Pagamento::getValor).sum();
+        // ALTERAÇÃO: Busca pagamentos ordenados pelo ID (ordem de criação)
+        List<Pagamento> pagamentos = pagamentoRepository.findByComandaOrderByIdAsc(comanda);
 
+        double totalJaPago = pagamentos.stream().mapToDouble(Pagamento::getValor).sum();
         double saldoRestante = Math.round((totalBruto - totalJaPago) * 100.0) / 100.0;
 
         List<Double> historico = pagamentos.stream().map(Pagamento::getValor).collect(Collectors.toList());
 
         return new PagamentoResponseDTO(valorPagoAgora, totalBruto, totalJaPago, saldoRestante, historico);
+    }
+
+    private double[] calcularValoresComanda(Comanda comanda) {
+        PagamentoResponseDTO dto = montarResumoFinanceiro(comanda, 0.0);
+        return new double[]{dto.totalConta(), dto.totalJaPago(), dto.saldoRestante()};
     }
 
     public PagamentoResponseDTO consultarSaldoMesa(int numeroMesa) {
@@ -173,7 +185,6 @@ public class MesaService {
 
         Optional<Comanda> comandaOpt = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA);
 
-        // Se a mesa está aberta mas sem comanda, fecha a mesa para limpar o estado
         if (comandaOpt.isEmpty()) {
             if (mesa.getStatus() == StatusMesa.ABERTA) {
                 mesa.setStatus(StatusMesa.FECHADA);

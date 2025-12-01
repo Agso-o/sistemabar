@@ -60,34 +60,16 @@ async function adicionarItem(event) {
     }
 }
 
-// --- PAGAMENTO: ETAPA 1 (CONSULTAR COM CACHE-BUSTING REFORÇADO) ---
+// --- PAGAMENTO: ETAPA 1 (CONSULTAR) ---
 async function verificarSaldo(event) {
     event.preventDefault();
     const mesa = document.getElementById('pgto-mesa-numero').value;
     if (!mesa) { alert("Digite a mesa."); return; }
 
-    // Esconde o painel anterior para dar sensação de recarregamento
     document.getElementById('pgto-area-pagar').style.display = 'none';
 
     try {
-        // TRUQUE: Adiciona timestamp E headers explícitos para matar o cache
-        const timestamp = new Date().getTime();
-        const response = await fetch(`${API_GARCOM_URL}/saldo?mesa=${mesa}&_=${timestamp}`, {
-            method: 'GET',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-
-        const info = await response.json();
-
-        console.log("Dados recebidos da API:", info); // Para debug no console (F12)
-
-        atualizarPainelPagamento(info);
+        await buscarDadosSaldo(mesa);
 
         // Troca os painéis
         document.getElementById('form-consulta-pgto').style.display = 'none';
@@ -99,7 +81,39 @@ async function verificarSaldo(event) {
     }
 }
 
-// --- PAGAMENTO: ETAPA 2 (PAGAR) ---
+// --- PAGAMENTO: BOTÃO MANUAL DE ATUALIZAR ---
+async function atualizarValoresPgto() {
+    // Pega a mesa do campo que ficou oculto (mas ainda tem o valor)
+    const mesa = document.getElementById('pgto-mesa-numero').value;
+    if (!mesa) return;
+
+    try {
+        await buscarDadosSaldo(mesa);
+        // Pequeno feedback visual (piscar botão ou algo do tipo opcional)
+    } catch (error) {
+        alert("Erro ao atualizar: " + error.message);
+    }
+}
+
+// --- FUNÇÃO REUTILIZÁVEL PARA BUSCAR DADOS ---
+async function buscarDadosSaldo(mesa) {
+    const timestamp = new Date().getTime();
+    const response = await fetch(`${API_GARCOM_URL}/saldo?mesa=${mesa}&_=${timestamp}`, {
+        method: 'GET',
+        headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+    });
+
+    if (!response.ok) throw new Error(await response.text());
+
+    const info = await response.json();
+    atualizarPainelPagamento(info);
+}
+
+// --- PAGAMENTO: ETAPA 2 (REALIZAR PAGAMENTO) ---
 async function realizarPagamento(event) {
     event.preventDefault();
     const mesa = document.getElementById('pgto-mesa-numero').value;
@@ -119,7 +133,6 @@ async function realizarPagamento(event) {
         const info = await response.json();
         alert("Pagamento registrado!");
 
-        // Atualiza a visualização com os novos saldos
         atualizarPainelPagamento(info);
         document.getElementById('pgto-valor-input').value = ""; // Limpa campo
 
@@ -130,7 +143,7 @@ async function realizarPagamento(event) {
     } catch (error) { alert("Erro: " + error.message); }
 }
 
-// Função auxiliar para desenhar os valores na tela
+// --- DESENHAR PAINEL ---
 function atualizarPainelPagamento(info) {
     document.getElementById('pgto-view-total').innerText = `R$ ${info.totalConta.toFixed(2)}`;
     document.getElementById('pgto-view-pago').innerText = `R$ ${info.totalJaPago.toFixed(2)}`;
@@ -138,11 +151,19 @@ function atualizarPainelPagamento(info) {
 
     const lista = document.getElementById('pgto-lista-parciais');
     lista.innerHTML = "";
+
     if (info.pagamentosParciais && info.pagamentosParciais.length > 0) {
         info.pagamentosParciais.forEach((val, i) => {
             const li = document.createElement('li');
-            li.innerText = `${i+1}º Pagamento: R$ ${val.toFixed(2)}`;
             li.style.borderBottom = "1px solid #444";
+            li.style.padding = "5px 0";
+
+            if (val < 0) {
+                li.innerHTML = `Movimentação ${i+1}: <span style="float: right; color: #ff6b6b; font-weight: bold;">ESTORNO (R$ ${Math.abs(val).toFixed(2)})</span>`;
+            } else {
+                li.innerHTML = `Movimentação ${i+1}: <span style="float: right; color: #4cd137;">Pagamento (R$ ${val.toFixed(2)})</span>`;
+            }
+
             lista.appendChild(li);
         });
     } else {
@@ -151,7 +172,6 @@ function atualizarPainelPagamento(info) {
 }
 
 function cancelarPgto() {
-    // Botão voltar
     document.getElementById('pgto-area-pagar').style.display = 'none';
     document.getElementById('form-consulta-pgto').style.display = 'flex';
     document.getElementById('pgto-valor-input').value = "";
