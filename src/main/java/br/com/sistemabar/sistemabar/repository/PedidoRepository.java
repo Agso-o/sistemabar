@@ -16,19 +16,21 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
 
     List<Pedido> findByComandaAndStatus(Comanda comanda, StatusPedido status);
 
-    List<Pedido> findByComanda(Comanda comanda);
-
-    // --- ADICIONADO (NECESSÁRIO PARA RelatorioService) ---
+    // Consulta para: ITEM MAIS VENDIDO (Por quantidade)
+    // Filtra status = 'ATIVO' para não contar itens cancelados
     @Query("SELECT new br.com.sistemabar.sistemabar.dto.ItemMaisVendidoDTO(i.nome, SUM(p.quantidade)) " +
             "FROM Pedido p JOIN p.item i " +
-            "WHERE p.status = 'ATIVO' " + // Garante que só conta pedidos ativos
-            "GROUP BY i.nome ORDER BY SUM(p.quantidade) DESC")
+            "WHERE p.status = 'ATIVO' " +
+            "GROUP BY i.nome " +
+            "ORDER BY SUM(p.quantidade) DESC")
     List<ItemMaisVendidoDTO> findItensMaisVendidos();
 
-    // --- ADICIONADO (NECESSÁRIO PARA RelatorioService) ---
+    // Consulta para: MAIOR FATURAMENTO (Quantidade * Preço do Snapshot)
+    // Filtra status = 'ATIVO'
     @Query("SELECT new br.com.sistemabar.sistemabar.dto.ItemMaiorFaturamentoDTO(i.nome, SUM(p.quantidade * p.precoUnitarioSnapshot)) " +
             "FROM Pedido p JOIN p.item i " +
-            "WHERE p.status = 'ATIVO' " + // Garante que só conta pedidos ativos
-            "GROUP BY i.nome ORDER BY SUM(p.quantidade * p.precoUnitarioSnapshot) DESC")
+            "WHERE p.status = 'ATIVO' " +
+            "GROUP BY i.nome " +
+            "ORDER BY SUM(p.quantidade * p.precoUnitarioSnapshot) DESC")
     List<ItemMaiorFaturamentoDTO> findItensMaiorFaturamento();
 }

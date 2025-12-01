@@ -8,10 +8,10 @@ public class ItemCardapio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Uso interno do banco (Relacionamentos)
+    private Long id; // Uso interno
 
     @Column(nullable = false, unique = true)
-    private int numero; // Uso do Usuário (Código do produto no cardápio)
+    private int numero; // Uso do Usuário (Código)
 
     @Column(nullable = false)
     private String nome;
@@ -25,7 +25,7 @@ public class ItemCardapio {
     private int tipo; // 2=Bebida, 3=Comida
 
     @Column(nullable = false)
-    private boolean ativo; // true = Disponível, false = "Excluído" (Histórico mantido)
+    private boolean ativo = true; // <--- CORREÇÃO: Padrão é TRUE (Ativo)
 
     // --- Construtores ---
     public ItemCardapio() {
@@ -37,7 +37,7 @@ public class ItemCardapio {
         this.preco = preco;
         this.categoria = categoria;
         this.tipo = tipo;
-        this.ativo = true; // Nasce ativo por padrão
+        this.ativo = true; // Garante no construtor também
     }
 
     // --- Getters e Setters ---

@@ -36,6 +36,8 @@ public class MesaService {
 
     @Transactional
     public Comanda abrirMesa(int numeroMesa, int pessoas) {
+        if (pessoas <= 0) throw new RuntimeException("A mesa deve ser iniciada com pelo menos 1 pessoa.");
+
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
         if (mesa == null) throw new RuntimeException("Mesa não encontrada: " + numeroMesa);
         if (mesa.getStatus() == StatusMesa.ABERTA) throw new RuntimeException("Mesa já está ABERTA");
@@ -44,6 +46,14 @@ public class MesaService {
         mesaRepository.save(mesa);
 
         Comanda novaComanda = new Comanda(mesa, pessoas);
+
+        // Couvert Automático
+        Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
+        if (config.getValorCouvertPessoa() > 0) {
+            double totalCouvert = config.getValorCouvertPessoa() * pessoas;
+            novaComanda.setValorCouvertAplicado(totalCouvert);
+        }
+
         return comandaRepository.save(novaComanda);
     }
 
@@ -58,13 +68,16 @@ public class MesaService {
                 .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
 
         comanda.setPessoas(comanda.getPessoas() + quantidadeMais);
-        // Opcional: Se já tiver couvert aplicado, poderia recalcular aqui automaticamente
-        // mas vamos deixar manual para o garçom decidir.
+
+        if (comanda.getValorCouvertAplicado() > 0) {
+            Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
+            double novoTotalCouvert = config.getValorCouvertPessoa() * comanda.getPessoas();
+            comanda.setValorCouvertAplicado(novoTotalCouvert);
+        }
 
         return comandaRepository.save(comanda);
     }
 
-    // --- NOVO MÉTODO: ATUALIZAR COUVERT ---
     @Transactional
     public Comanda atualizarCouvertMesa(int numeroMesa, boolean cobrar) {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
@@ -74,21 +87,17 @@ public class MesaService {
                 .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
 
         if (cobrar) {
-            // Busca o valor configurado no Admin
             Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
-            double valorPorPessoa = config.getValorCouvertPessoa();
-
-            // Calcula o total
-            double totalCouvert = valorPorPessoa * comanda.getPessoas();
+            double totalCouvert = config.getValorCouvertPessoa() * comanda.getPessoas();
             comanda.setValorCouvertAplicado(totalCouvert);
         } else {
-            // Remove o couvert
             comanda.setValorCouvertAplicado(0.0);
         }
 
         return comandaRepository.save(comanda);
     }
 
+    // --- CORREÇÃO AQUI: Força preço e status explicitamente ---
     @Transactional
     public Pedido adicionarPedido(int numeroMesa, int numeroItem, int quantidade) {
         if (quantidade <= 0) throw new RuntimeException("A quantidade deve ser maior que zero.");
@@ -117,7 +126,11 @@ public class MesaService {
             throw new RuntimeException("Este item (" + item.getNome() + ") está inativo.");
         }
 
+        // CRIA O PEDIDO E FORÇA OS VALORES
         Pedido novoPedido = new Pedido(comanda, item, quantidade);
+        novoPedido.setPrecoUnitarioSnapshot(item.getPreco()); // Garante que o preço foi pego
+        novoPedido.setStatus(StatusPedido.ATIVO); // Garante que está ativo
+
         return pedidoRepository.save(novoPedido);
     }
 
@@ -157,17 +170,25 @@ public class MesaService {
     private PagamentoResponseDTO montarResumoFinanceiro(Comanda comanda, double valorPagoAgora) {
         Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
 
+        // Busca apenas os pedidos ATIVOS
         List<Pedido> pedidos = pedidoRepository.findByComandaAndStatus(comanda, StatusPedido.ATIVO);
-        double subtotal = 0, gorjetaBebida = 0, gorjetaComida = 0;
+
+        double subtotalItens = 0;
+        double valorGorjeta = 0;
 
         for (Pedido p : pedidos) {
             double valor = p.getPrecoUnitarioSnapshot() * p.getQuantidade();
-            subtotal += valor;
-            if (p.getItem().getTipo() == 2) gorjetaBebida += valor * config.getPercentualGorjetaBebida();
-            else if (p.getItem().getTipo() == 3) gorjetaComida += valor * config.getPercentualGorjetaComida();
+            subtotalItens += valor;
+
+            if (p.getItem().getTipo() == 2) { // Bebida
+                valorGorjeta += valor * config.getPercentualGorjetaBebida();
+            } else if (p.getItem().getTipo() == 3) { // Comida
+                valorGorjeta += valor * config.getPercentualGorjetaComida();
+            }
         }
 
-        double totalBruto = subtotal + gorjetaBebida + gorjetaComida + comanda.getValorCouvertAplicado();
+        double valorCouvert = comanda.getValorCouvertAplicado();
+        double totalBruto = subtotalItens + valorGorjeta + valorCouvert;
 
         List<Pagamento> pagamentos = pagamentoRepository.findByComandaOrderByIdAsc(comanda);
         double totalJaPago = pagamentos.stream().mapToDouble(Pagamento::getValor).sum();
@@ -176,7 +197,16 @@ public class MesaService {
 
         List<Double> historico = pagamentos.stream().map(Pagamento::getValor).collect(Collectors.toList());
 
-        return new PagamentoResponseDTO(valorPagoAgora, totalBruto, totalJaPago, saldoRestante, historico);
+        return new PagamentoResponseDTO(
+                valorPagoAgora,
+                subtotalItens,
+                valorGorjeta,
+                valorCouvert,
+                totalBruto,
+                totalJaPago,
+                saldoRestante,
+                historico
+        );
     }
 
     private double[] calcularValoresComanda(Comanda comanda) {

@@ -26,28 +26,23 @@ public class Pedido {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusPedido status; // Vai usar o Enum simplificado
+    private StatusPedido status;
 
     @Column(name = "motivo_cancelamento")
-    private String motivoCancelamento; // Onde o garçom anota o motivo
+    private String motivoCancelamento;
 
-    // --- Construtores ---
-    public Pedido() {
-        // JPA
-    }
+    public Pedido() {}
 
     public Pedido(Comanda comanda, ItemCardapio item, int quantidade) {
         this.comanda = comanda;
         this.item = item;
         this.quantidade = quantidade;
+        // Salva o preço do momento do pedido
         this.precoUnitarioSnapshot = item.getPreco();
-        this.status = StatusPedido.ATIVO; // <-- Alterado para ATIVO
+        this.status = StatusPedido.ATIVO;
     }
 
-    // --- Getters e Setters ---
-    // (Todos os getters e setters que já tínhamos)
-    // ...
-
+    // Getters e Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Comanda getComanda() { return comanda; }

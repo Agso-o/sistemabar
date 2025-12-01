@@ -8,11 +8,11 @@ import br.com.sistemabar.sistemabar.repository.ConfiguracaoRepository;
 import br.com.sistemabar.sistemabar.repository.ItemCardapioRepository;
 import br.com.sistemabar.sistemabar.repository.MesaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdminService {
@@ -32,31 +32,42 @@ public class AdminService {
 
     // --- Gerenciamento de Cardápio ---
 
-    // MÉTODO QUE FALTAVA:
-    public ItemCardapio buscarItemPorNumero(int numero) {
-        // Como sua tabela não tem coluna 'numero', usamos o ID como código
-        return itemCardapioRepository.findById((long) numero).orElse(null);
-    }
-
     @Transactional
     public ItemCardapio salvarItemCardapio(ItemCardapio item) {
-        if (item.getNome() == null || item.getNome().isBlank()) {
-            throw new RuntimeException("Nome obrigatório.");
+        if (item.getNome() == null || item.getNome().isBlank()) throw new RuntimeException("Nome obrigatório.");
+        if (item.getPreco() < 0) throw new RuntimeException("Preço negativo.");
+
+        // Verifica conflito de número
+        Optional<ItemCardapio> itemExistente = itemCardapioRepository.findByNumero(item.getNumero());
+
+        if (itemExistente.isPresent()) {
+            if (item.getId() != null && !itemExistente.get().getId().equals(item.getId())) {
+                throw new RuntimeException("Já existe um item com o número " + item.getNumero());
+            }
+            if (item.getId() == null) {
+                throw new RuntimeException("Já existe um item com o número " + item.getNumero());
+            }
         }
-        if (item.getPreco() < 0) {
-            throw new RuntimeException("Preço negativo.");
+
+        // Se for criação (ID null), FORÇA ATIVO
+        if (item.getId() == null) {
+            item.setAtivo(true);
         }
-        // Removemos a verificação de 'numero' duplicado pois usamos o ID automático
+
         return itemCardapioRepository.save(item);
     }
 
     @Transactional
     public void deletarItemCardapio(Long itemId) {
-        if (!itemCardapioRepository.existsById(itemId)) {
-            throw new RuntimeException("Item não encontrado para deletar.");
-        }
-        // CORREÇÃO: Usamos deleteById (exclusão real) porque sua tabela não tem campo 'ativo'
-        itemCardapioRepository.deleteById(itemId);
+        ItemCardapio item = itemCardapioRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item não encontrado."));
+
+        item.setAtivo(false); // Inativa em vez de apagar
+        itemCardapioRepository.save(item);
+    }
+
+    public ItemCardapio buscarItemPorNumero(int numero) {
+        return itemCardapioRepository.findByNumero(numero).orElse(null);
     }
 
     public List<ItemCardapio> listarItensCardapio() {
@@ -64,66 +75,24 @@ public class AdminService {
     }
 
     // --- Gerenciamento de Mesas ---
-
     @Transactional
     public Mesa salvarMesa(Mesa mesa) {
-        if (mesa.getNumero() <= 0) {
-            throw new RuntimeException("O número da mesa é inválido.");
-        }
-
-        if (mesa.getId() != null) {
-            // EDIÇÃO
-            Mesa mesaExistente = mesaRepository.findById(mesa.getId())
-                    .orElseThrow(() -> new RuntimeException("Mesa não encontrada."));
-
-            mesaExistente.setNumero(mesa.getNumero());
-
-            if (mesa.getStatus() != null) {
-                mesaExistente.setStatus(mesa.getStatus());
-            }
-            return mesaRepository.save(mesaExistente);
-
-        } else {
-            // CRIAÇÃO
-            if (mesaRepository.findByNumero(mesa.getNumero()) != null) {
-                throw new RuntimeException("Mesa já existe: " + mesa.getNumero());
-            }
-
-            if (mesa.getStatus() == null) {
-                // Usa o padrão do seu Enum (FECHADA = Livre)
-                mesa.setStatus(StatusMesa.FECHADA);
-            }
-            return mesaRepository.save(mesa);
-        }
+        if (mesa.getNumero() <= 0) throw new RuntimeException("Número inválido.");
+        if (mesa.getStatus() == null) mesa.setStatus(StatusMesa.FECHADA);
+        return mesaRepository.save(mesa);
     }
 
     @Transactional
     public void deletarMesa(Long mesaId) {
         Mesa mesa = mesaRepository.findById(mesaId)
                 .orElseThrow(() -> new RuntimeException("Mesa não encontrada."));
-
-        // Regra 1: Não pode deletar se estiver EM USO agora
-        if (mesa.getStatus() == StatusMesa.ABERTA) {
-            throw new RuntimeException("Não pode deletar mesa que está EM USO (Aberta).");
-        }
-
-        // Regra 2: Tenta deletar, mas captura erro se tiver histórico
-        try {
-            mesaRepository.delete(mesa);
-            // Força o envio para o banco agora para testar o erro dentro do try
-            mesaRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            // Se cair aqui, é porque tem Comandas ligadas a essa mesa
-            throw new RuntimeException("Não é possível excluir esta mesa pois ela possui histórico de Comandas/Vendas.");
-        }
+        if (mesa.getStatus() == StatusMesa.ABERTA) throw new RuntimeException("Não pode deletar mesa ABERTA.");
+        mesaRepository.delete(mesa);
     }
 
-    public List<Mesa> listarMesas() {
-        return mesaRepository.findAll();
-    }
+    public List<Mesa> listarMesas() { return mesaRepository.findAll(); }
 
     // --- Configurações ---
-
     public Configuracao getConfiguracoes() {
         return configuracaoRepository.findById(1L).orElse(new Configuracao());
     }
