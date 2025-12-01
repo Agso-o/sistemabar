@@ -1,8 +1,9 @@
-protegerPagina(null);
+// Verifica se é admin (função do auth-guard.js)
+if (typeof protegerPagina === "function") {
+    protegerPagina('ADMIN');
+}
 
-const API_URL = "http://localhost:8080/api/admin/mesas";
-
-const BASE_URL_CLIENTE = "http://localhost:8080/cliente/mesa";
+const API_URL = "/api/admin/mesas";
 
 document.addEventListener('DOMContentLoaded', () => {
     carregarMesas();
@@ -23,7 +24,7 @@ async function carregarMesas() {
                 <td>Mesa ${mesa.numero}</td>
                 <td>${mesa.status}</td>
                 <td>
-                    <button class="btn-qr" onclick="gerarQR(${mesa.numero})">
+                    <button class="btn-qr" onclick="gerarQR(${mesa.id}, ${mesa.numero})">
                         Gerar QR
                     </button>
                 </td>
@@ -36,7 +37,7 @@ async function carregarMesas() {
     }
 }
 
-function gerarQR(numeroMesa) {
+function gerarQR(idMesa, numeroMesa) {
     const modal = document.getElementById('modal-qr');
     const containerQR = document.getElementById('qrcode');
     const tituloMesa = document.getElementById('modal-mesa-num');
@@ -44,8 +45,12 @@ function gerarQR(numeroMesa) {
     containerQR.innerHTML = "";
     tituloMesa.innerText = numeroMesa;
 
-    const linkParaOCliente = `${BASE_URL_CLIENTE}?mesa=${numeroMesa}`;
-    
+    // A URL que o cliente vai acessar.
+    // Usamos window.location.origin para pegar o IP/Localhost correto automaticamente
+    const linkParaOCliente = `${window.location.origin}/cliente/mesa?mesaId=${idMesa}`;
+
+    console.log("Gerando QR para:", linkParaOCliente);
+
     new QRCode(containerQR, {
         text: linkParaOCliente,
         width: 200,
@@ -59,6 +64,7 @@ function fecharModal() {
     document.getElementById('modal-qr').style.display = 'none';
 }
 
+// Fechar ao clicar fora
 window.onclick = function(event) {
     const modal = document.getElementById('modal-qr');
     if (event.target == modal) {
