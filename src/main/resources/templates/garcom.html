@@ -79,12 +79,32 @@
         </div>
 
         <div id="painel-7" class="painel-acao">
-            <form class="box" onsubmit="registrarPgto(event)">
+
+            <form class="box" id="form-consulta-pgto" onsubmit="verificarSaldo(event)">
                 <h3 class="texto">Registrar Pagamento</h3>
                 <input type="number" id="pgto-mesa-numero" placeholder="Número da Mesa">
-                <input type="number" id="pgto-valor" placeholder="Valor pago (R$)" step="0.01">
-                <button type="submit">Registrar Pagamento</button>
+                <button type="submit">Verificar Conta</button>
             </form>
+
+            <div id="pgto-area-pagar" class="box" style="display: none; border-top: 1px solid #555; margin-top: 20px; width: 100%;">
+
+                <div style="background-color: #222; padding: 10px; border-radius: 5px; width: 90%; text-align: center;">
+                    <p class="texto">Total Bruto: <span id="pgto-view-total">R$ 0,00</span></p>
+                    <p class="texto">Já Pago: <span id="pgto-view-pago" style="color: #4cd137;">R$ 0,00</span></p>
+                    <h2 class="texto" style="margin: 10px 0;">FALTA: <span id="pgto-view-restante" style="color: #ff6b6b;">R$ 0,00</span></h2>
+
+                    <details style="color: #aaa; font-size: 12px; cursor: pointer; text-align: left; margin-top: 5px;">
+                        <summary>Ver Pagamentos Parciais</summary>
+                        <ul id="pgto-lista-parciais" style="list-style: none; padding: 5px;"></ul>
+                    </details>
+                </div>
+
+                <form class="box" onsubmit="realizarPagamento(event)" style="margin-top: 15px;">
+                    <input type="number" id="pgto-valor-input" placeholder="Valor a Pagar (R$)" step="0.01">
+                    <button type="submit" style="background-color: #28a745;">Confirmar Pagamento</button>
+                    <button type="button" onclick="cancelarPgto()" style="background-color: #555; width: 100px; font-size: 12px;">Voltar</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

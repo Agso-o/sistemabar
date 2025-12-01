@@ -1,5 +1,6 @@
 package br.com.sistemabar.sistemabar.service;
 
+import br.com.sistemabar.sistemabar.dto.PagamentoResponseDTO;
 import br.com.sistemabar.sistemabar.model.*;
 import br.com.sistemabar.sistemabar.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MesaService {
@@ -34,13 +37,8 @@ public class MesaService {
     @Transactional
     public Comanda abrirMesa(int numeroMesa, int pessoas) {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
-        if (mesa == null) {
-            throw new RuntimeException("Mesa não encontrada: " + numeroMesa);
-        }
-
-        if (mesa.getStatus() == StatusMesa.ABERTA) {
-            throw new RuntimeException("Mesa já está ABERTA (Ocupada)");
-        }
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada: " + numeroMesa);
+        if (mesa.getStatus() == StatusMesa.ABERTA) throw new RuntimeException("Mesa já está ABERTA");
 
         mesa.setStatus(StatusMesa.ABERTA);
         mesaRepository.save(mesa);
@@ -49,28 +47,34 @@ public class MesaService {
         return comandaRepository.save(novaComanda);
     }
 
-    // --- MUDANÇA: Recebe numeros (int) ao invés de IDs (Long) ---
+    // --- ADICIONAR PEDIDO (COM AUTO-RECUPERAÇÃO DE COMANDA) ---
     @Transactional
     public Pedido adicionarPedido(int numeroMesa, int numeroItem, int quantidade) {
-        if (quantidade <= 0) {
-            throw new RuntimeException("A quantidade deve ser maior que zero.");
-        }
+        if (quantidade <= 0) throw new RuntimeException("A quantidade deve ser maior que zero.");
 
-        // 1. Busca a Mesa pelo número
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
-        if (mesa == null) {
-            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
+        if (mesa == null) throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
+
+        // Se a mesa estiver FECHADA, não deixa adicionar.
+        if (mesa.getStatus() == StatusMesa.FECHADA) {
+            throw new RuntimeException("A Mesa " + numeroMesa + " está FECHADA. Abra a mesa antes de adicionar itens.");
         }
 
-        // 2. Busca a Comanda ABERTA desta mesa
-        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
-                .orElseThrow(() -> new RuntimeException("Não há comanda aberta para a Mesa " + numeroMesa));
+        // Tenta achar a comanda aberta
+        Optional<Comanda> comandaOpt = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA);
+        Comanda comanda;
 
-        // 3. Busca o Item pelo NÚMERO visual do cardápio
+        // Se a mesa está ABERTA mas não tem comanda (bug ou erro anterior), cria uma nova
+        if (comandaOpt.isEmpty()) {
+            comanda = new Comanda(mesa, 1);
+            comanda = comandaRepository.save(comanda);
+        } else {
+            comanda = comandaOpt.get();
+        }
+
         ItemCardapio item = itemCardapioRepository.findByNumero(numeroItem)
                 .orElseThrow(() -> new RuntimeException("Item código " + numeroItem + " não encontrado."));
 
-        // 4. Verifica se o item está ativo
         if (!item.isAtivo()) {
             throw new RuntimeException("Este item (" + item.getNome() + ") está inativo.");
         }
@@ -79,49 +83,7 @@ public class MesaService {
         return pedidoRepository.save(novoPedido);
     }
 
-    public double calcularTotalRestante(Comanda comanda) {
-        Configuracao config = configuracaoRepository.findById(1L)
-                .orElseThrow(() -> new RuntimeException("Configurações do sistema não encontradas"));
-
-        List<Pedido> pedidosAtivos = pedidoRepository.findByComandaAndStatus(comanda, StatusPedido.ATIVO);
-
-        double subtotalItens = 0;
-        double gorjetaBebida = 0;
-        double gorjetaComida = 0;
-
-        for (Pedido pedido : pedidosAtivos) {
-            double precoPedido = pedido.getPrecoUnitarioSnapshot() * pedido.getQuantidade();
-            subtotalItens += precoPedido;
-
-            int tipoItem = pedido.getItem().getTipo();
-
-            if (tipoItem == 2) { // Bebida
-                gorjetaBebida += precoPedido * config.getPercentualGorjetaBebida();
-            } else if (tipoItem == 3) { // Comida
-                gorjetaComida += precoPedido * config.getPercentualGorjetaComida();
-            }
-        }
-
-        double valorCouvert = comanda.getValorCouvertAplicado();
-
-        List<Pagamento> pagamentos = pagamentoRepository.findByComanda(comanda);
-        double totalPago = pagamentos.stream()
-                .mapToDouble(Pagamento::getValor)
-                .sum();
-
-        double totalBruto = subtotalItens + gorjetaBebida + gorjetaComida + valorCouvert;
-        double totalRestante = totalBruto - totalPago;
-
-        return Math.round(totalRestante * 100.0) / 100.0;
-    }
-
-    // Mantido para compatibilidade interna se necessário, mas o GarcomController não usa mais este diretamente
-    public double calcularTotalRestanteComanda(Long comandaId) {
-        Comanda comanda = comandaRepository.findById(comandaId)
-                .orElseThrow(() -> new RuntimeException("Comanda não encontrada: " + comandaId));
-        return calcularTotalRestante(comanda);
-    }
-
+    // --- CANCELAR PEDIDO (REINSERIDO) ---
     @Transactional
     public Pedido cancelarPedido(Long pedidoId, String motivo) {
         if (motivo == null || motivo.isBlank()) {
@@ -145,55 +107,99 @@ public class MesaService {
         return pedidoRepository.save(pedido);
     }
 
-    // --- CORRIGIDO: Agora aceita int (numero da mesa) ---
-    @Transactional
-    public Pagamento registrarPagamento(int numeroMesa, double valor) {
-        if (valor <= 0) {
-            throw new RuntimeException("O valor do pagamento deve ser maior que zero.");
+    // --- MÉTODOS FINANCEIROS ---
+
+    private PagamentoResponseDTO montarResumoFinanceiro(Comanda comanda, double valorPagoAgora) {
+        Configuracao config = configuracaoRepository.findById(1L).orElse(new Configuracao());
+
+        List<Pedido> pedidos = pedidoRepository.findByComandaAndStatus(comanda, StatusPedido.ATIVO);
+        double subtotal = 0, gorjetaBebida = 0, gorjetaComida = 0;
+
+        for (Pedido p : pedidos) {
+            double valor = p.getPrecoUnitarioSnapshot() * p.getQuantidade();
+            subtotal += valor;
+            if (p.getItem().getTipo() == 2) gorjetaBebida += valor * config.getPercentualGorjetaBebida();
+            else if (p.getItem().getTipo() == 3) gorjetaComida += valor * config.getPercentualGorjetaComida();
         }
 
+        double totalBruto = subtotal + gorjetaBebida + gorjetaComida + comanda.getValorCouvertAplicado();
+
+        List<Pagamento> pagamentos = pagamentoRepository.findByComanda(comanda);
+        double totalJaPago = pagamentos.stream().mapToDouble(Pagamento::getValor).sum();
+
+        double saldoRestante = Math.round((totalBruto - totalJaPago) * 100.0) / 100.0;
+
+        List<Double> historico = pagamentos.stream().map(Pagamento::getValor).collect(Collectors.toList());
+
+        return new PagamentoResponseDTO(valorPagoAgora, totalBruto, totalJaPago, saldoRestante, historico);
+    }
+
+    public PagamentoResponseDTO consultarSaldoMesa(int numeroMesa) {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
-        if (mesa == null) {
-            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
-        }
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada.");
 
         Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
                 .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
 
-        double totalRestante = calcularTotalRestante(comanda);
+        return montarResumoFinanceiro(comanda, 0.0);
+    }
 
-        if (valor > (totalRestante + 0.01)) {
-            throw new RuntimeException("Pagamento maior que o valor restante. Restam: R$ " + totalRestante);
+    @Transactional
+    public PagamentoResponseDTO registrarPagamento(int numeroMesa, double valor) {
+        if (valor <= 0) throw new RuntimeException("Valor inválido.");
+
+        Mesa mesa = mesaRepository.findByNumero(numeroMesa);
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada.");
+
+        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
+                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+
+        PagamentoResponseDTO resumoAtual = montarResumoFinanceiro(comanda, 0.0);
+
+        if (valor > (resumoAtual.saldoRestante() + 0.01)) {
+            throw new RuntimeException("Valor excede o restante (R$ " + resumoAtual.saldoRestante() + ")");
         }
 
         Pagamento novoPagamento = new Pagamento(comanda, valor);
-        return pagamentoRepository.save(novoPagamento);
+        pagamentoRepository.save(novoPagamento);
+
+        return montarResumoFinanceiro(comanda, valor);
     }
 
-    // --- CORRIGIDO: Agora aceita int (numero da mesa) ---
     @Transactional
     public Comanda fecharComanda(int numeroMesa) {
         Mesa mesa = mesaRepository.findByNumero(numeroMesa);
-        if (mesa == null) {
-            throw new RuntimeException("Mesa " + numeroMesa + " não encontrada.");
+        if (mesa == null) throw new RuntimeException("Mesa não encontrada.");
+
+        Optional<Comanda> comandaOpt = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA);
+
+        // Se a mesa está aberta mas sem comanda, fecha a mesa para limpar o estado
+        if (comandaOpt.isEmpty()) {
+            if (mesa.getStatus() == StatusMesa.ABERTA) {
+                mesa.setStatus(StatusMesa.FECHADA);
+                mesaRepository.save(mesa);
+                return null;
+            }
+            throw new RuntimeException("Mesa " + numeroMesa + " já está fechada.");
         }
 
-        Comanda comanda = comandaRepository.findByMesaAndStatus(mesa, StatusComanda.ABERTA)
-                .orElseThrow(() -> new RuntimeException("Nenhuma comanda aberta na Mesa " + numeroMesa));
+        Comanda comanda = comandaOpt.get();
+        PagamentoResponseDTO resumo = montarResumoFinanceiro(comanda, 0.0);
 
-        double totalRestante = calcularTotalRestante(comanda);
-
-        if (totalRestante > 0.01) {
-            throw new RuntimeException("A conta não pode ser fechada. Saldo devedor: R$ " + totalRestante);
+        if (resumo.saldoRestante() > 0.01) {
+            throw new RuntimeException("Conta não paga. Saldo: R$ " + resumo.saldoRestante());
         }
 
         comanda.setStatus(StatusComanda.FECHADA);
         comandaRepository.save(comanda);
 
-        // Libera a mesa
         mesa.setStatus(StatusMesa.FECHADA);
         mesaRepository.save(mesa);
 
         return comanda;
+    }
+
+    public double calcularTotalRestante(Comanda comanda) {
+        return montarResumoFinanceiro(comanda, 0.0).saldoRestante();
     }
 }
